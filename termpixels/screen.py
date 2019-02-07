@@ -66,10 +66,10 @@ class Screen:
 
     def print(self, text, x, y):
         for ch in text:
+            if x >= self.w:
+                return
             self.at(x, y).char = ch
             x += 1
-            if x > self.w:
-                return
 
 class PixelData:
     def __init__(self):
