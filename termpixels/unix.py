@@ -1,3 +1,8 @@
+import termios
+import tty
+import sys
+from observable import Observable
+
 class UnixBackend:
     def __init__(self):
         self._cursor_pos = None
@@ -59,3 +64,33 @@ class UnixBackend:
 
     def flush(self):
         print("", end="", flush=True)
+
+class UnixInput(Observable):
+    def __init__(self):
+        self._old_attr = None
+        self._fd_in = 0 # stdin
+        self._cbreak = False
+    
+    @property
+    def cbreak(self):
+        return self._cbreak
+
+    def set_cbreak(self, on = True):
+        if on:
+            self._old_attr = termios.tcgetattr(self._fd_in)
+            tty.setcbreak(self._fd_in)
+            self._cbreak = True
+        else:
+            termios.tcsetattr(self._fd_in, termios.TCSAFLUSH, self._old_attr)
+            self._cbreak = False
+    
+    def start(self):
+        self.set_cbreak(True)
+
+    def stop(self):
+        self.set_cbreak(False)
+    
+    def getch(self):
+        if not self.cbreak:
+            raise Exception("cbreak not enabled.")
+        return sys.stdin.read(1)
