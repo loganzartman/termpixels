@@ -2,6 +2,7 @@ import termios
 import tty
 import sys
 import threading 
+import queue
 from queue import Queue
 from observable import Observable
 
@@ -75,22 +76,43 @@ class UnixInput(Observable):
         self._cbreak = False
 
         self._input_queue = Queue()
-
-        def collector_body():
-            while True:
-                ch = self.getch()
-                self._input_queue.put(ch)
-        self._collector = threading.Thread(target=collector_body, daemon=True)
-
-        def processor_body():
-            while True:
-                ch = self._input_queue.get()
-                self.emit("key", ch)
-        self._processor = threading.Thread(target=processor_body, daemon=True)
+        self._collector = threading.Thread(target=self.collector_func, daemon=True)
+        self._grouper = threading.Thread(target=self.grouper_func, daemon=True)
 
     @property
     def cbreak(self):
         return self._cbreak
+
+    def collector_func(self):
+        while True:
+            ch = self.getch()
+            self._input_queue.put(ch)
+    
+    def grouper_func(self):
+        buffer = []
+        grouping = False
+        group_timeout = 0
+        while True:
+            try:
+                timeout = group_timeout if grouping else None
+                ch = self._input_queue.get(timeout=timeout)
+                buffer.append(ch)
+                grouping = True
+                if ch == "\x1b":
+                    group_timeout = 25/1000
+            except queue.Empty:
+                if len(buffer) > 0:
+                    self.parse_group("".join(buffer))
+                    buffer.clear()
+                grouping = False
+                group_timeout = 0
+    
+    def parse_group(self, chars):
+        if chars.startswith("\x1b"):
+            pass
+        else:
+            for ch in chars:
+                self.emit("key", ch)
 
     def set_cbreak(self, on = True):
         if on:
@@ -104,7 +126,7 @@ class UnixInput(Observable):
     def start(self):
         self.set_cbreak(True)
         self._collector.start()
-        self._processor.start()
+        self._grouper.start()
 
     def stop(self):
         self.set_cbreak(False)
