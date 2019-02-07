@@ -2,8 +2,9 @@ from time import sleep
 from random import randint, choice
 from math import sin, sqrt 
 from screen import Screen, Color, PixelData
+from unix import UnixBackend
 
-s = Screen(80, 20)
+s = Screen(80, 20, UnixBackend())
 s.show_cursor = True
 strings = ["Hello world!", "Wow " * 10, "Another few lines...", "3", "2", "1"]
 for line, string in enumerate(strings):

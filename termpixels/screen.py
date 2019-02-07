@@ -2,10 +2,11 @@ from copy import copy
 from unix import UnixBackend
 
 class Screen:
-    def __init__(self, w, h):
-        self.backend = UnixBackend()
+    def __init__(self, w, h, backend):
+        self.backend = backend
         self.resize(w, h)
         self.show_cursor = False 
+        self.cursor_pos = (0, 0)
     
     @property
     def w(self):
@@ -54,6 +55,7 @@ class Screen:
                 if pixel != self._pixelCache[x][y]:
                     self.render(pixel, x, y)
                 self._pixelCache[x][y] = copy(pixel)
+        self.backend.cursor_pos = self.cursor_pos
         self.backend.flush()
     
     def render(self, pixel, x, y):
