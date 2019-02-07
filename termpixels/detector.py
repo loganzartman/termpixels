@@ -2,13 +2,7 @@ import sys
 from unix import UnixBackend, UnixInput
 
 def detect_backend():
-    if sys.platform.startswith("linux") or sys.platform.startswith("darwin"):
-        return UnixBackend()
-    else:
-        raise NotImplementedError("Unsupported platform.")
+    return UnixBackend()
 
 def detect_input():
-    if sys.platform.startswith("linux") or sys.platform.startswith("darwin"):
-        return UnixInput()
-    else:
-        raise NotImplementedError("Unsupported platform.")
+    return UnixInput()

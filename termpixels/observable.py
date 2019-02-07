@@ -5,7 +5,7 @@ class Observable:
         self._listeners = defaultdict(list)
     
     def listen(self, event, listener):
-        self._listeners[event] += listener
+        self._listeners[event].append(listener)
     
     def unlisten(self, event, listener):
         self._listeners[event].remove(listener)

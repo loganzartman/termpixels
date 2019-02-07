@@ -1,6 +1,8 @@
 import termios
 import tty
 import sys
+import threading 
+from queue import Queue
 from observable import Observable
 
 class UnixBackend:
@@ -67,10 +69,25 @@ class UnixBackend:
 
 class UnixInput(Observable):
     def __init__(self):
+        super().__init__()
         self._old_attr = None
         self._fd_in = 0 # stdin
         self._cbreak = False
-    
+
+        self._input_queue = Queue()
+
+        def collector_body():
+            while True:
+                ch = self.getch()
+                self._input_queue.put(ch)
+        self._collector = threading.Thread(target=collector_body, daemon=True)
+
+        def processor_body():
+            while True:
+                ch = self._input_queue.get()
+                self.emit("key", ch)
+        self._processor = threading.Thread(target=processor_body, daemon=True)
+
     @property
     def cbreak(self):
         return self._cbreak
@@ -86,6 +103,8 @@ class UnixInput(Observable):
     
     def start(self):
         self.set_cbreak(True)
+        self._collector.start()
+        self._processor.start()
 
     def stop(self):
         self.set_cbreak(False)
