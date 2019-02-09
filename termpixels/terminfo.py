@@ -1,3 +1,8 @@
+import os
+from os.path import expanduser, exists
+
+TERMINFO_PATHS = ["/usr/share/terminfo", "/usr/lib/terminfo", expanduser("~/.terminfo"), "/etc/terminfo"]
+
 class Terminfo:
     def __init__(self, *, names, booleans, numbers, offsets, strings):
         self.names = names
@@ -6,7 +11,14 @@ class Terminfo:
         self.offsets = offsets
         self.strings = strings
 
+def terminal_name():
+    return os.environ["TERM"]
 
+def get_terminfo(name=terminal_name()):
+    for path in TERMINFO_PATHS:
+        if exists(path):
+            return parse_terminfo("{}/{}/{}".format(path, name[0], name))
+    raise FileNotFoundError("Could not find a terminfo database.")
 
 def parse_terminfo(path):
     """Parse a compiled terminfo file (directory tree format).
@@ -51,5 +63,4 @@ def _parse_terminfo_base(f, extended=False):
     numbers = [_read_int(f, 4 if extended else 2) for _ in range(numbers_count)]
     offsets = [_read_int(f) for _ in range(offsets_count)]
     strings = f.read(table_bytes).decode("ascii").split("\0")
-    print(vars())
     return Terminfo(names=names, booleans=booleans, numbers=numbers, offsets=offsets, strings=strings)
