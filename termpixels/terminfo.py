@@ -1,18 +1,36 @@
 import os
 from os.path import expanduser, exists
+from terminfo_indices import boolean_indices, number_indices, string_indices
 
 TERMINFO_PATHS = ["/usr/share/terminfo", "/usr/lib/terminfo", expanduser("~/.terminfo"), "/etc/terminfo"]
 
 class Terminfo:
-    def __init__(self, *, names, booleans, numbers, offsets, strings):
+    def __init__(self, *, names, booleans, numbers, strings):
         self.names = names
         self.booleans = booleans
         self.numbers = numbers
-        self.offsets = offsets
         self.strings = strings
+    
+    def getBoolean(self, name):
+        return self.booleans[boolean_indices[name]]
+    
+    def getNumber(self, name):
+        return self.numbers[number_indices[name]]
+
+    def getString(self, name):
+        return self.strings[string_indices[name]]
+
+    def get(self, name):
+        if name in boolean_indices:
+            return self.getBoolean(name)
+        if name in number_indices:
+            return self.getNumber(name)
+        if name in string_indices:
+            return self.getString(name)
+        raise Exception("Invalid terminfo name")
 
 def terminal_name():
-    return os.environ["TERM"]
+    return os.environ["TERM"] or "xterm"
 
 def get_terminfo(name=terminal_name()):
     for path in TERMINFO_PATHS:
@@ -61,6 +79,10 @@ def _parse_terminfo_base(f, extended=False):
     _eat_null(f) # eat alignment byte if present
 
     numbers = [_read_int(f, 4 if extended else 2) for _ in range(numbers_count)]
+
     offsets = [_read_int(f) for _ in range(offsets_count)]
-    strings = f.read(table_bytes).decode("ascii").split("\0")
-    return Terminfo(names=names, booleans=booleans, numbers=numbers, offsets=offsets, strings=strings)
+    string_table = f.read(table_bytes).decode("ascii")
+    strings = []
+    for i, o in enumerate(offsets):
+        print(i, o, string_table[o:string_table.index("\0", o)])
+    return Terminfo(names=names, booleans=booleans, numbers=numbers, strings=strings)
