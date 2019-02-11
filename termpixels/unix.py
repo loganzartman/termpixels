@@ -5,7 +5,7 @@ import threading
 import queue
 from queue import Queue
 from observable import Observable
-from terminfo import Terminfo, termcap_format
+from terminfo import Terminfo
 
 class UnixBackend:
     def __init__(self):
@@ -24,7 +24,7 @@ class UnixBackend:
     def cursor_pos(self, pos):
         if self._cursor_pos != pos:
             col, row = pos
-            self.write_escape(termcap_format(self._ti["cup"], row, col)) 
+            self.write_escape(self._ti.parameterize("cup", row, col)) 
             self._cursor_pos = pos
 
     @property
@@ -35,9 +35,9 @@ class UnixBackend:
     def show_cursor(self, show_cursor):
         if self._show_cursor != show_cursor:
             if show_cursor:
-                self.write_escape(termcap_format(self._ti["cnorm"]))
+                self.write_escape(self._ti.parameterize("cnorm"))
             else:
-                self.write_escape(termcap_format(self._ti["civis"]))
+                self.write_escape(self._ti.parameterize("civis"))
             self._show_cursor = show_cursor
     
     @property
@@ -64,8 +64,11 @@ class UnixBackend:
         self.cursor_pos = (0, 0)
         self.write_escape("\x1b[2J")
     
-    def write_escape(self, code):
-        print(code, end="")
+    def write_escape(self, binary):
+        if type(binary) == str:
+            print(binary, end="")
+        else:
+            print(binary.decode("ascii"), end="")
 
     def write(self, text):
         print(text, end="")
