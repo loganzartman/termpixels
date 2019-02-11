@@ -47,7 +47,7 @@ class UnixBackend:
     @fg.setter
     def fg(self, color):
         if self._fg != color:
-            self.write_escape("\x1b[38;2;{r};{g};{b}m".format(r=color.r, g=color.g, b=color.b))
+            self.write_escape(self._ti.parameterize("setaf", self.color_auto(color)))
             self._fg = color
     
     @property
@@ -57,8 +57,47 @@ class UnixBackend:
     @bg.setter
     def bg(self, color):
         if self._bg != color:
-            self.write_escape("\x1b[48;2;{r};{g};{b}m".format(r=color.r, g=color.g, b=color.b))
+            self.write_escape(self._ti.parameterize("setab", self.color_auto(color)))
             self._bg = color
+    
+    def color_auto(self, color):
+        col = 0
+        if self._ti.num("colors") == 256:
+            col = self.color_to_256(color)
+        else:
+            col = self.color_to_16(color)
+        return col
+
+    def color_to_16(self, color):
+        if color.r == color.g == color.b == 0:
+            return 0
+        bright = sum((color.r, color.g, color.b)) >= 127 * 3
+        r = 1 if color.r > 63 else 0
+        g = 1 if color.g > 63 else 0
+        b = 1 if color.b > 63 else 0
+        return (r | (g << 1) | (b << 2)) + (8 if bright else 0)
+
+    def color_to_256(self, color):
+        """Convert this color into ANSI 8-bit color format.
+        Red is converted to 196
+        This converter emits the 216 RGB colors and the 24 grayscale colors.
+        It does not use the 16 named colors.
+        """
+        output = 0
+        if color.r == color.g == color.b:
+            # grayscale case
+            if color.r == 255: # pure white
+                output = 231
+            else:
+                output = 232 + int(color.r / 256 * 24)
+        else:
+            # 216-color RGB
+            scale = lambda c: int(c / 256 * 6)
+            output = 16
+            output += scale(color.b)
+            output += scale(color.g) * 6
+            output += scale(color.r) * 6 * 6
+        return output
 
     def clear_screen(self):
         self.cursor_pos = (0, 0)
