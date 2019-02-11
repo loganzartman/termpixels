@@ -24,8 +24,7 @@ class Terminfo:
     
 def termcap_format(format_str, *args):
     """Evaluate a parameterized termcap string. (it's a full language)
-    Doesn't support the %? conditional syntax because it sounded hard.
-    https://www.mkssoftware.com/docs/man5/terminfo.5.asp
+    See `man 5 terminfo` in section "Parameterized Strings"
     """
     arguments = list(args)
     stack = []
@@ -76,7 +75,16 @@ def termcap_format(format_str, *args):
         output.append("%")
     def parse_char(match):
         output.append(match[0])
-
+    def parse_conditional(match):
+        if_part = match[1]
+        then_part = match[2]
+        else_part = match[3]
+        parse(if_part)
+        if stack.pop():
+            parse(then_part)
+        elif else_part:
+            parse(else_part)
+    
     patterns = {
         re.compile(r"(%(?:0?\d)?[dx]|c|s)"): parse_output,
         re.compile(r"%p([1-9])"): parse_push,
@@ -86,17 +94,20 @@ def termcap_format(format_str, *args):
         re.compile(r"%{(\d+)}"): parse_const_int,
         re.compile(r"%([+\-*/m&|\^=<>AO])"): parse_binop,
         re.compile(r"%([!~])"): parse_unop,
+        re.compile(r"%\?(.+)%t(.+)(?:%e(.+))?%;"): parse_conditional,
         re.compile(r"%i"): parse_inc,
         re.compile(r"%%"): parse_percent,
         re.compile(r"."): parse_char
     }
     
-    while len(format_str) > 0:
-        for p, parser in patterns.items():
-            match = p.match(format_str)
-            if match:
-                parser(match)
-                format_str = format_str[len(match[0]):]
-                break
-            
+    def parse(string):
+        while len(string) > 0:
+            for p, parser in patterns.items():
+                match = p.match(string)
+                if match:
+                    parser(match)
+                    string = string[len(match[0]):]
+                    break
+    parse(format_str)
+    
     return "".join(output)
