@@ -34,7 +34,10 @@ class UnixBackend:
     @show_cursor.setter
     def show_cursor(self, show_cursor):
         if self._show_cursor != show_cursor:
-            self.write_escape("[?25" + "h" if show_cursor else "l")
+            if show_cursor:
+                self.write_escape(termcap_format(self._ti["cnorm"]))
+            else:
+                self.write_escape(termcap_format(self._ti["civis"]))
             self._show_cursor = show_cursor
     
     @property
@@ -44,7 +47,7 @@ class UnixBackend:
     @fg.setter
     def fg(self, color):
         if self._fg != color:
-            self.write_escape("[38;2;{r};{g};{b}m".format(r=color.r, g=color.g, b=color.b))
+            self.write_escape("\x1b[38;2;{r};{g};{b}m".format(r=color.r, g=color.g, b=color.b))
             self._fg = color
     
     @property
@@ -54,15 +57,15 @@ class UnixBackend:
     @bg.setter
     def bg(self, color):
         if self._bg != color:
-            self.write_escape("[48;2;{r};{g};{b}m".format(r=color.r, g=color.g, b=color.b))
+            self.write_escape("\x1b[48;2;{r};{g};{b}m".format(r=color.r, g=color.g, b=color.b))
             self._bg = color
 
     def clear_screen(self):
         self.cursor_pos = (0, 0)
-        self.write("\x1b[2J")
+        self.write_escape("\x1b[2J")
     
     def write_escape(self, code):
-        print("\x1b{}".format(code), end="")
+        print(code, end="")
 
     def write(self, text):
         print(text, end="")
