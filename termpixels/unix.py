@@ -3,18 +3,43 @@ import tty
 import sys
 import threading 
 import queue
+import signal
+import fcntl
+import struct
 from queue import Queue
 from observable import Observable
 from terminfo import Terminfo
 
-class UnixBackend:
+class UnixBackend(Observable):
     def __init__(self):
+        super().__init__()
         self._ti = Terminfo()
         self._cursor_pos = None
         self._fg = None
         self._bg = None
-        self._show_cursor = None 
+        self._show_cursor = None
+        self._size_dirty = True 
+        self._size = None
+        self._handle_sigwinch_lock = threading.Lock()
         self.clear_screen()
+        signal.signal(signal.SIGWINCH, self.handle_sigwinch)
+    
+    def handle_sigwinch(self, signum, frame):
+        self._size_dirty = True
+        with self._handle_sigwinch_lock:
+            self.emit("resize")
+    
+    @property
+    def size(self):
+        if self._size_dirty:
+            self.update_size()
+        return self._size
+    
+    def update_size(self):
+        result = fcntl.ioctl(sys.stdout, termios.TIOCGWINSZ, struct.pack("HHHH", 0, 0, 0, 0))
+        r, c, _, _ = struct.unpack("HHHH", result)
+        self._size = (c, r) 
+        self._size_dirty = False
     
     @property
     def cursor_pos(self):
