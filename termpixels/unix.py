@@ -69,6 +69,8 @@ class UnixBackend:
         return col
 
     def color_to_16(self, color):
+        """Convert color into ANSI 16-color format.
+        """
         if color.r == color.g == color.b == 0:
             return 0
         bright = sum((color.r, color.g, color.b)) >= 127 * 3
@@ -78,7 +80,7 @@ class UnixBackend:
         return (r | (g << 1) | (b << 2)) + (8 if bright else 0)
 
     def color_to_256(self, color):
-        """Convert this color into ANSI 8-bit color format.
+        """Convert color into ANSI 8-bit color format.
         Red is converted to 196
         This converter emits the 216 RGB colors and the 24 grayscale colors.
         It does not use the 16 named colors.
