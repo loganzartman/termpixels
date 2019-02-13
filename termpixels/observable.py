@@ -10,6 +10,6 @@ class Observable:
     def unlisten(self, event, listener):
         self._listeners[event].remove(listener)
     
-    def emit(self, event, data):
+    def emit(self, event, data=None):
         for l in self._listeners[event]:
             l(data)

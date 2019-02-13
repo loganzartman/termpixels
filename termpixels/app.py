@@ -7,7 +7,7 @@ class App:
         self.backend = detect_backend()
         self.input = detect_input()
         self.input.listen("key", self.on_key)
-        self.screen = Screen(80, 20, self.backend)
+        self.screen = Screen(self.backend)
         self.cursor_x = 0
 
     def on_key(self, ch):

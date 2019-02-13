@@ -2,11 +2,15 @@ from copy import copy
 from unix import UnixBackend
 
 class Screen:
-    def __init__(self, w, h, backend):
+    def __init__(self, backend):
         self.backend = backend
-        self.resize(w, h)
-        self.show_cursor = False 
         self.cursor_pos = (0, 0)
+        self._w = 0
+        self._h = 0
+        self._pixels = []
+        self.resize(backend.size[0], backend.size[1])
+        self.backend.listen("resize", lambda size: self.resize(backend.size[0], backend.size[1]))
+        self.show_cursor = False 
     
     @property
     def w(self):
@@ -18,10 +22,12 @@ class Screen:
 
     def resize(self, w, h):
         self.backend.clear_screen()
+        self._pixels = [[self._pixels[x][y] if x < self._w and y < self._h else PixelData() 
+                         for y in range(h)] for x in range(w)]
+        self._pixelCache = [[None for y in range(h)] for x in range(w)]
         self._w = w
         self._h = h
-        self._pixels = [[PixelData() for y in range(h)] for x in range(w)]
-        self._pixelCache = [[None for y in range(h)] for x in range(w)]
+        self.update()
 
     @property
     def show_cursor(self):
