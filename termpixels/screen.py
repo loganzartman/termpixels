@@ -8,6 +8,8 @@ class Screen:
         self._w = 0
         self._h = 0
         self._pixels = []
+        self.paint_fg = Color(255, 255, 255)
+        self.paint_bg = Color(0, 0, 0)
         self.resize(backend.size[0], backend.size[1])
         self.backend.listen("resize", lambda size: self.resize(backend.size[0], backend.size[1]))
         self.show_cursor = False 
@@ -74,7 +76,10 @@ class Screen:
         for ch in text:
             if x >= self.w:
                 return
-            self.at(x, y).char = ch
+            pixel = self.at(x, y)
+            pixel.char = ch
+            pixel.fg = self.paint_fg
+            pixel.bg = self.paint_bg
             x += 1
 
 class PixelData:
@@ -112,4 +117,4 @@ class Color:
         try:
             return self.r == other.r and self.g == other.g and self.b == other.b
         except AttributeError:
-            return NotImplemented
+            return False 

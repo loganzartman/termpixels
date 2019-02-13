@@ -20,13 +20,20 @@ class UnixBackend(Observable):
         self._show_cursor = None
         self._size_dirty = True 
         self._size = None
-        self._handle_sigwinch_lock = threading.Lock()
-        self.clear_screen()
+
+        self._sigwinch_event = threading.Event()
+        self._sigwinch_consumer = threading.Thread(target=self.watch_sigwinch, daemon=True)
         signal.signal(signal.SIGWINCH, self.handle_sigwinch)
+        
+        self.clear_screen()
     
     def handle_sigwinch(self, signum, frame):
-        self._size_dirty = True
-        with self._handle_sigwinch_lock:
+        self._sigwinch_event.set()
+    
+    def watch_sigwinch(self):
+        while True:
+            self._sigwinch_event.wait()
+            self._size_dirty = True
             self.emit("resize")
     
     @property
