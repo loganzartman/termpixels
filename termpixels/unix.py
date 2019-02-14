@@ -23,6 +23,7 @@ class UnixBackend(Observable):
 
         self._sigwinch_event = threading.Event()
         self._sigwinch_consumer = threading.Thread(target=self.watch_sigwinch, daemon=True)
+        self._sigwinch_consumer.start()
         signal.signal(signal.SIGWINCH, self.handle_sigwinch)
         
         self.clear_screen()
