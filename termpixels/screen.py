@@ -1,6 +1,18 @@
 from copy import copy
 from unix import UnixBackend
 
+class Color:
+    def __init__(self, r, g, b):
+        self.r = r
+        self.g = g
+        self.b = b
+    
+    def __eq__(self, other):
+        try:
+            return self.r == other.r and self.g == other.g and self.b == other.b
+        except AttributeError:
+            return False 
+
 class Screen:
     def __init__(self, backend):
         self.backend = backend
@@ -46,15 +58,21 @@ class Screen:
             raise Exception("y position {} out of bounds".format(y))
         return self._pixels[x][y]
 
-    def fill(self, pixel, x, y, w, h):
+    def fill(self, x, y, w, h, *, fg=None, bg=None, char=None):
         for i in range(x, x + w):
             for j in range(y, y + h):
                 if i < 0 or j < 0  or i >= self.w or j >= self.h:
                     continue
-                self._pixels[i][j] = copy(pixel)
+                pixel = self._pixels[i][j]
+                if fg:
+                    pixel.fg = fg
+                if bg:
+                    pixel.bg = bg
+                if char:
+                    pixel.char = char
     
-    def clear_to(self, pixel):
-        self.fill(pixel, 0, 0, self.w, self.h)
+    def clear(self, *, fg=Color(255,255,255), bg=Color(0,0,0), char=""):
+        self.fill(0, 0, self.w, self.h, fg=fg, bg=bg, char=char)
     
     def update(self):
         for y in range(self.h):
@@ -107,14 +125,3 @@ class PixelData:
         except AttributeError:
             return NotImplemented
 
-class Color:
-    def __init__(self, r, g, b):
-        self.r = r
-        self.g = g
-        self.b = b
-    
-    def __eq__(self, other):
-        try:
-            return self.r == other.r and self.g == other.g and self.b == other.b
-        except AttributeError:
-            return False 
