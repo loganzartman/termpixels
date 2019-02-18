@@ -1,3 +1,4 @@
+from threading import Lock
 from copy import copy
 from unix import UnixBackend
 
@@ -15,6 +16,7 @@ class Color:
 
 class Screen:
     def __init__(self, backend):
+        self.lock = Lock()
         self.backend = backend
         self.cursor_pos = (0, 0)
         self._w = 0
@@ -35,12 +37,13 @@ class Screen:
         return self._h
 
     def resize(self, w, h):
-        self.backend.clear_screen()
-        self._pixels = [[self._pixels[x][y] if x < self._w and y < self._h else PixelData() 
-                         for y in range(h)] for x in range(w)]
-        self._pixelCache = [[None for y in range(h)] for x in range(w)]
-        self._w = w
-        self._h = h
+        with self.lock:
+            self._pixels = [[self._pixels[x][y] if x < self._w and y < self._h else PixelData() 
+                            for y in range(h)] for x in range(w)]
+            self._pixelCache = [[None for y in range(h)] for x in range(w)]
+            self._w = w
+            self._h = h
+            self.backend.clear_screen()
         self.update()
 
     @property
@@ -52,37 +55,40 @@ class Screen:
         self.backend.show_cursor = show
     
     def at(self, x, y):
-        if x >= self.w or x < 0:
-            raise Exception("x position {} out of bounds".format(x))
-        if y >= self.h or y < 0:
-            raise Exception("y position {} out of bounds".format(y))
-        return self._pixels[x][y]
+        with self.lock:
+            if x >= self.w or x < 0:
+                raise Exception("x position {} out of bounds".format(x))
+            if y >= self.h or y < 0:
+                raise Exception("y position {} out of bounds".format(y))
+            return self._pixels[x][y]
 
     def fill(self, x, y, w, h, *, fg=None, bg=None, char=None):
-        for i in range(x, x + w):
-            for j in range(y, y + h):
-                if i < 0 or j < 0  or i >= self.w or j >= self.h:
-                    continue
-                pixel = self._pixels[i][j]
-                if fg:
-                    pixel.fg = fg
-                if bg:
-                    pixel.bg = bg
-                if char:
-                    pixel.char = char
+        with self.lock:
+            for i in range(x, x + w):
+                for j in range(y, y + h):
+                    if i < 0 or j < 0  or i >= self.w or j >= self.h:
+                        continue
+                    pixel = self._pixels[i][j]
+                    if fg:
+                        pixel.fg = fg
+                    if bg:
+                        pixel.bg = bg
+                    if char:
+                        pixel.char = char
     
     def clear(self, *, fg=Color(255,255,255), bg=Color(0,0,0), char=""):
         self.fill(0, 0, self.w, self.h, fg=fg, bg=bg, char=char)
     
     def update(self):
-        for y in range(self.h):
-            for x in range(self.w):
-                pixel = self.at(x, y)
-                if pixel != self._pixelCache[x][y]:
-                    self.render(pixel, x, y)
-                self._pixelCache[x][y] = copy(pixel)
-        self.backend.cursor_pos = self.cursor_pos
-        self.backend.flush()
+        with self.lock:
+            for y in range(self.h):
+                for x in range(self.w):
+                    pixel = self._pixels[x][y]
+                    if pixel != self._pixelCache[x][y]:
+                        self.render(pixel, x, y)
+                    self._pixelCache[x][y] = copy(pixel)
+            self.backend.cursor_pos = self.cursor_pos
+            self.backend.flush()
     
     def render(self, pixel, x, y):
         self.backend.cursor_pos = (x, y)
