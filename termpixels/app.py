@@ -5,10 +5,10 @@ from detector import detect_backend, detect_input
 class App:
     def __init__(self):
         self.backend = detect_backend()
-        self.backend.listen("resize", lambda _: self.on_resize())
         self.input = detect_input()
         self.input.listen("key", lambda d: self.on_key(d))
         self.screen = Screen(self.backend)
+        self.backend.listen("resize", lambda _: self.on_resize())
     
     def start(self):
         self.input.start()

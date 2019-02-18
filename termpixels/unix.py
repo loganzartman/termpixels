@@ -34,6 +34,7 @@ class UnixBackend(Observable):
     def watch_sigwinch(self):
         while True:
             self._sigwinch_event.wait()
+            self._sigwinch_event.clear()
             self._size_dirty = True
             self.emit("resize")
     
