@@ -2,7 +2,7 @@ from time import sleep
 from screen import Screen, Color, PixelData
 from unix import UnixBackend
 
-s = Screen(24, 12, UnixBackend())
+s = Screen(UnixBackend())
 s.show_cursor = False
 for x in range(s.w):
     for y in range(s.h):
