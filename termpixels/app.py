@@ -1,9 +1,9 @@
-from time import sleep
+from time import sleep, perf_counter
 from screen import Screen
 from detector import detect_backend, detect_input
 
 class App:
-    def __init__(self, *, mouse=False):
+    def __init__(self, *, mouse=False, framerate=30):
         self.backend = detect_backend()
         self.backend.save_screen()
         self.backend.application_keypad = True
@@ -13,14 +13,17 @@ class App:
         self.input.listen("mouse", lambda d: self.on_mouse(d))
         self.screen = Screen(self.backend)
         self.backend.listen("resize", lambda _: self.on_resize())
+        self._framerate = framerate
     
     def start(self):
         self.backend.clear_screen()
         self.input.start()
         try:
             while True:
+                t0 = perf_counter()
                 self.on_frame()
-                sleep(1/60)
+                dt = perf_counter() - t0
+                sleep(max(1/500, 1/self._framerate - dt))
         except KeyboardInterrupt:
             pass
         finally:
