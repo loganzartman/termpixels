@@ -9,7 +9,7 @@ import struct
 from queue import Queue
 from observable import Observable
 from terminfo import Terminfo
-from unix_keys import Key, make_key_parser
+from unix_keys import Key, make_key_parser, make_mouse_parser
 
 class UnixBackend(Observable):
     def __init__(self):
@@ -102,6 +102,17 @@ class UnixBackend(Observable):
         self._application_keypad = enabled
         self.write_escape(self._ti.parameterize("smkx" if enabled else "rmkx"))
     
+    @property
+    def mouse_tracking(self):
+        return self._mouse_tracking
+
+    @mouse_tracking.setter
+    def mouse_tracking(self, enabled):
+        if not self._ti.string("kmous"):
+            raise Exception("Terminal does not support mouse input")
+        self.write_escape(b"\x1b[?1003" + (b"h" if enabled else b"l")) # xterm all-motion mouse tracking
+        self.write_escape(b"\x1b[?1006" + (b"h" if enabled else b"l")) # xterm SGR mouse format
+    
     def save_screen(self):
         self.write_escape(self._ti.parameterize("smcup"))
     
@@ -174,6 +185,7 @@ class UnixInput(Observable):
         self._cbreak = False
         self._ti = Terminfo()
         self._key_parser = make_key_parser(self._ti)
+        self._mouse_parser = make_mouse_parser(self._ti)
 
         self._input_queue = Queue()
         self._collector = threading.Thread(target=self.collector_func, daemon=True)
@@ -192,28 +204,36 @@ class UnixInput(Observable):
         buffer = []
         grouping = False
         group_timeout = 0
+        def dump():
+            self.parse_group("".join(buffer))
+            buffer.clear()
         while True:
             try:
                 timeout = group_timeout if grouping else None
                 ch = self._input_queue.get(timeout=timeout)
+                if ch == "\x1b":
+                    if len(buffer) > 0:
+                        dump()
+                    group_timeout = 25/1000
                 buffer.append(ch)
                 grouping = True
-                if ch == "\x1b":
-                    group_timeout = 25/1000
             except queue.Empty:
                 if len(buffer) > 0:
-                    self.parse_group("".join(buffer))
-                    buffer.clear()
+                    dump()
                 grouping = False
                 group_timeout = 0
     
     def parse_group(self, chars):
-        kpr = self._key_parser.parse(chars)
-        if kpr:
-            self.emit("input", kpr)
+        if chars[0] == "\x1b":
+            kpr = self._key_parser.parse(chars)
+            if kpr:
+                self.emit("key", kpr)
+            mpr = self._mouse_parser.parse(chars)
+            if mpr:
+                self.emit("mouse", mpr)
         else:
             for ch in chars:
-                self.emit("input", Key(char=ch))
+                self.emit("key", Key(char=ch))
 
     def set_cbreak(self, on = True):
         if on:

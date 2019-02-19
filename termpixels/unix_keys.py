@@ -17,10 +17,22 @@ class Key:
         return "Key({})".format(", ".join(params))
     
     def __eq__(self, other):
+        if type(other) == str:
+            return self.char == other
         try:
-            return self.char == other.char
+            return self.char == other.char and self.name == other.name
         except AttributeError:
             return False
+
+class Mouse:
+    def __init__(self, x, y, button, pressed):
+        self.x = x
+        self.y = y
+        self.button = button
+        self.pressed = pressed
+    
+    def __repr__(self):
+        return "Mouse(x={}, y={}, button={}, pressed={})".format(self.x, self.y, self.button, self.pressed)
 
 class KeyParser:
     def __init__(self):
@@ -31,9 +43,22 @@ class KeyParser:
     
     def parse(self, group):
         for pattern, key in self.pattern_key_pairs.items():
-            if group.startswith(pattern.decode("ascii")):
+            if group.startswith(pattern):
                 return copy(key)
         return None
+
+class SgrMouseParser:
+    def __init__(self, mouse_prefix):
+        self.mouse_prefix = mouse_prefix
+    
+    def parse(self, group):
+        if group.startswith(self.mouse_prefix):
+            pressed = group[-1] == "M"
+            parts = group[len(self.mouse_prefix):-1].split(";")
+            button = int(parts[0])
+            x = int(parts[1]) - 1
+            y = int(parts[2]) - 1
+            return Mouse(x, y, button, pressed)
 
 def make_key_parser(ti):
     parser = KeyParser()
@@ -53,11 +78,14 @@ def make_key_parser(ti):
     for code, name in names.items():
         seq = ti.parameterize(code)
         if seq:
-            parser.register_key(seq, Key(name=name))
+            parser.register_key(seq.decode("ascii"), Key(name=name))
 
     # function keys
     for i in range(1, 64):
         seq = ti.string("kf{}".format(i))
         if seq:
-            parser.register_key(seq, Key(name="f{}".format(i)))
+            parser.register_key(seq.decode("ascii"), Key(name="f{}".format(i)))
     return parser
+
+def make_mouse_parser(ti):
+    return SgrMouseParser(ti.string("kmous").decode("ascii"))
