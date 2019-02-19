@@ -1,19 +1,46 @@
 from threading import Lock
 from copy import copy
 from time import perf_counter
+import colorsys
 from unix import UnixBackend
 
 class Color:
     def __init__(self, r, g, b):
-        self.r = r
-        self.g = g
-        self.b = b
+        self._r = r
+        self._g = g
+        self._b = b
+        self._packed = Color.pack(self)
     
+    @property
+    def r(self):
+        return self._r
+    
+    @property
+    def g(self):
+        return self._g
+    
+    @property
+    def b(self):
+        return self._b
+
     def __eq__(self, other):
         try:
-            return self.r == other.r and self.g == other.g and self.b == other.b
+            return self._packed == other._packed
         except AttributeError:
             return False 
+
+    @staticmethod  
+    def pack(col):
+        return (col.r << 16) | (col.g << 8) | (col.b)
+    
+    @staticmethod
+    def rgb(r, g, b):
+        scale = lambda c: int(max(0, min(1, c)) * 255)
+        return Color(scale(r), scale(g), scale(b))
+    
+    @staticmethod
+    def hsl(h, s, l):
+        return Color.rgb(*colorsys.hls_to_rgb(h, l, s))
 
 class Screen:
     def __init__(self, backend):
@@ -59,7 +86,6 @@ class Screen:
         with self.lock:
             self._pixels = [[self._pixels[x][y] if x < self._w and y < self._h else PixelData() 
                             for y in range(h)] for x in range(w)]
-            self._pixelCache = [[None for y in range(h)] for x in range(w)]
             self._w = w
             self._h = h
             self.backend.clear_screen()
@@ -81,7 +107,7 @@ class Screen:
                 raise Exception("y position {} out of bounds".format(y))
             return self._pixels[x][y]
 
-    def fill(self, x, y, w, h, *, fg=None, bg=None, char=None):
+    def fill(self, x, y, w, h, *, fg, bg, char):
         with self.lock:
             for i in range(x, x + w):
                 for j in range(y, y + h):
@@ -105,10 +131,10 @@ class Screen:
             for y in range(self.h):
                 for x in range(self.w):
                     pixel = self._pixels[x][y]
-                    if pixel != self._pixelCache[x][y]:
+                    if pixel._dirty:
                         self.render(pixel, x, y)
+                        pixel._dirty = False
                         self._update_count += 1
-                    self._pixelCache[x][y] = copy(pixel)
             self.backend.cursor_pos = self.cursor_pos
             self.backend.flush()
             self._update_duration = perf_counter() - t0
@@ -131,10 +157,14 @@ class Screen:
                 x += 1
 
 class PixelData:
-    def __init__(self):
-        self.fg = Color(255, 255, 255)
-        self.bg = Color(0, 0, 0)
-        self.char = " "
+    def __init__(self, *, fg=Color(255, 255, 255), bg=Color(0, 0, 0), char=" "):
+        self._dirty = True
+        self._char = None
+        self._fg = None
+        self._bg = None
+        self.fg = fg
+        self.bg = bg
+        self.char = char
     
     @property
     def char(self):
@@ -144,7 +174,29 @@ class PixelData:
     def char(self, char):
         if len(char) != 1:
             raise Exception("Character must have length 1")
-        self._char = char
+        if self._char != char:
+            self._char = char
+            self._dirty = True
+    
+    @property
+    def fg(self):
+        return self._fg
+
+    @fg.setter
+    def fg(self, value):
+        if self._fg != value:
+            self._fg = value
+            self._dirty = True
+    
+    @property
+    def bg(self):
+        return self._bg
+    
+    @bg.setter
+    def bg(self, value):
+        if self._bg != value:
+            self._bg = value
+            self._dirty = True
 
     def __str__(self):
         return "({}; fg {}; bg {})".format(self.char, self.fg, self.bg)
@@ -154,4 +206,3 @@ class PixelData:
             return self.fg == other.fg and self.bg == other.bg and self.char == other.char
         except AttributeError:
             return False
-
