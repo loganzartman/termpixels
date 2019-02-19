@@ -1,5 +1,6 @@
 from threading import Lock
 from copy import copy
+from time import perf_counter
 from unix import UnixBackend
 
 class Color:
@@ -69,26 +70,30 @@ class Screen:
                     if i < 0 or j < 0  or i >= self.w or j >= self.h:
                         continue
                     pixel = self._pixels[i][j]
-                    if fg:
+                    if fg is not None:
                         pixel.fg = fg
-                    if bg:
+                    if bg is not None:
                         pixel.bg = bg
-                    if char:
+                    if char is not None:
                         pixel.char = char
     
-    def clear(self, *, fg=Color(255,255,255), bg=Color(0,0,0), char=""):
+    def clear(self, *, fg=Color(255,255,255), bg=Color(0,0,0), char=" "):
         self.fill(0, 0, self.w, self.h, fg=fg, bg=bg, char=char)
     
     def update(self):
         with self.lock:
+            t0 = perf_counter()
+            self._update_count = 0
             for y in range(self.h):
                 for x in range(self.w):
                     pixel = self._pixels[x][y]
                     if pixel != self._pixelCache[x][y]:
                         self.render(pixel, x, y)
+                        self._update_count += 1
                     self._pixelCache[x][y] = copy(pixel)
             self.backend.cursor_pos = self.cursor_pos
             self.backend.flush()
+            self._update_duration = perf_counter() - t0
     
     def render(self, pixel, x, y):
         self.backend.cursor_pos = (x, y)
