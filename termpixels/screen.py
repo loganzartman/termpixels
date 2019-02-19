@@ -129,5 +129,5 @@ class PixelData:
         try:
             return self.fg == other.fg and self.bg == other.bg and self.char == other.char
         except AttributeError:
-            return NotImplemented
+            return False
 

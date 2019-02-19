@@ -9,6 +9,7 @@ import struct
 from queue import Queue
 from observable import Observable
 from terminfo import Terminfo
+from unix_keys import Key, make_key_parser
 
 class UnixBackend(Observable):
     def __init__(self):
@@ -25,8 +26,6 @@ class UnixBackend(Observable):
         self._sigwinch_consumer = threading.Thread(target=self.watch_sigwinch, daemon=True)
         self._sigwinch_consumer.start()
         signal.signal(signal.SIGWINCH, self.handle_sigwinch)
-        
-        self.clear_screen()
     
     def handle_sigwinch(self, signum, frame):
         self._sigwinch_event.set()
@@ -94,6 +93,21 @@ class UnixBackend(Observable):
             self.write_escape(self._ti.parameterize("setab", self.color_auto(color)))
             self._bg = color
     
+    @property
+    def application_keypad(self):
+        return self._application_keypad
+    
+    @application_keypad.setter
+    def application_keypad(self, enabled):
+        self._application_keypad = enabled
+        self.write_escape(self._ti.parameterize("smkx" if enabled else "rmkx"))
+    
+    def save_screen(self):
+        self.write_escape(self._ti.parameterize("smcup"))
+    
+    def load_screen(self):
+        self.write_escape(self._ti.parameterize("rmcup"))
+    
     def color_auto(self, color):
         col = 0
         if self._ti.num("colors") == 256:
@@ -158,6 +172,8 @@ class UnixInput(Observable):
         self._old_attr = None
         self._fd_in = 0 # stdin
         self._cbreak = False
+        self._ti = Terminfo()
+        self._key_parser = make_key_parser(self._ti)
 
         self._input_queue = Queue()
         self._collector = threading.Thread(target=self.collector_func, daemon=True)
@@ -192,11 +208,12 @@ class UnixInput(Observable):
                 group_timeout = 0
     
     def parse_group(self, chars):
-        if chars.startswith("\x1b"):
-            pass
+        kpr = self._key_parser.parse(chars)
+        if kpr:
+            self.emit("input", kpr)
         else:
             for ch in chars:
-                self.emit("key", ch)
+                self.emit("input", Key(char=ch))
 
     def set_cbreak(self, on = True):
         if on:
