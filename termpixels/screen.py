@@ -36,6 +36,24 @@ class Screen:
     @property
     def h(self):
         return self._h
+    
+    @property
+    def paint_fg(self):
+        return self._paint_fg
+    
+    @paint_fg.setter
+    def paint_fg(self, value):
+        with self.lock:
+            self._paint_fg = value
+    
+    @property
+    def paint_bg(self):
+        return self._paint_bg
+    
+    @paint_bg.setter
+    def paint_bg(self, value):
+        with self.lock:
+            self._paint_bg = value
 
     def resize(self, w, h):
         with self.lock:
@@ -102,14 +120,15 @@ class Screen:
         self.backend.write(pixel.char)
 
     def print(self, text, x, y):
-        for ch in text:
-            if x >= self.w:
-                return
-            pixel = self.at(x, y)
-            pixel.char = ch
-            pixel.fg = self.paint_fg
-            pixel.bg = self.paint_bg
-            x += 1
+        with self.lock:
+            for ch in text:
+                if x >= self.w:
+                    return
+                pixel = self._pixels[x][y]
+                pixel.char = ch
+                pixel.fg = self.paint_fg
+                pixel.bg = self.paint_bg
+                x += 1
 
 class PixelData:
     def __init__(self):
