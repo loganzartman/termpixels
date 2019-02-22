@@ -5,7 +5,7 @@ from screen import Color
 
 class ParticleApp(App):
     def __init__(self):
-        super().__init__(mouse=True)
+        super().__init__(mouse=True, framerate=60)
         self.mouse_x = 0
         self.mouse_y = 0
         self.mouse_px = 0
@@ -33,8 +33,8 @@ class ParticleApp(App):
 
         self.screen.clear()
         for i, p in enumerate(self.particles):
-            pix = self.screen.at(int(p.x), int(p.y))
-            pix.bg = Color.hsl(i/len(self.particles), 1.0, 0.5)
+            col = Color.hsl(i/len(self.particles), 1.0, 0.5)
+            self.screen.print(" ", int(p.x), int(p.y), bg=col)
             p.update()
             if p.x < 0 or p.y < 0 or p.x >= self.screen.w or p.y >= self.screen.h:
                 self.particles.remove(p)
