@@ -1,8 +1,8 @@
 from time import sleep
 from random import randint, choice
 from math import sin, sqrt 
-from screen import Screen, Color, PixelData
-from unix import UnixBackend
+from termpixels.screen import Screen, Color, PixelData
+from termpixels.unix import UnixBackend
 
 s = Screen(UnixBackend())
 s.show_cursor = False 

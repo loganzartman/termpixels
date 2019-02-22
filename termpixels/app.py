@@ -1,6 +1,6 @@
 from time import sleep, perf_counter
-from screen import Screen
-from detector import detect_backend, detect_input
+from termpixels.screen import Screen
+from termpixels.detector import detect_backend, detect_input
 
 class App:
     def __init__(self, *, mouse=False, framerate=30):

@@ -1,6 +1,6 @@
 from time import sleep
-from screen import Screen, Color, PixelData
-from unix import UnixBackend
+from termpixels.screen import Screen, Color, PixelData
+from termpixels.unix import UnixBackend
 
 s = Screen(UnixBackend())
 s.show_cursor = False

@@ -1,7 +1,7 @@
 import random
 import math
-from app import App
-from screen import Color
+from termpixels.app import App
+from termpixels.screen import Color
 
 class ParticleApp(App):
     def __init__(self):

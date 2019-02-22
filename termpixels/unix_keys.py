@@ -1,5 +1,5 @@
 from copy import copy
-from terminfo import Terminfo
+from termpixels.terminfo import Terminfo
 
 class Key:
     def __init__(self, *, char=None, name=None):

@@ -1,5 +1,5 @@
 import sys
-from unix import UnixBackend, UnixInput
+from termpixels.unix import UnixBackend, UnixInput
 
 def detect_backend():
     return UnixBackend()

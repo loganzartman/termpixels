@@ -1,6 +1,6 @@
 from random import random
-from app import App
-from screen import Color
+from termpixels.app import App
+from termpixels.screen import Color
 
 class MouseTestApp(App):
     def __init__(self):

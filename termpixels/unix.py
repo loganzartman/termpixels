@@ -7,9 +7,9 @@ import signal
 import fcntl
 import struct
 from queue import Queue
-from observable import Observable
-from terminfo import Terminfo
-from unix_keys import Key, make_key_parser, make_mouse_parser
+from termpixels.observable import Observable
+from termpixels.terminfo import Terminfo
+from termpixels.unix_keys import Key, make_key_parser, make_mouse_parser
 
 class UnixBackend(Observable):
     def __init__(self):
@@ -19,6 +19,7 @@ class UnixBackend(Observable):
         self._fg = None
         self._bg = None
         self._show_cursor = None
+        self._mouse_tracking = None
         self._size_dirty = True 
         self._size = None
 

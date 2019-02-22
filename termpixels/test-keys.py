@@ -1,4 +1,4 @@
-from app import App
+from termpixels.app import App
 
 class KeyTestApp(App):
     def __init__(self):
