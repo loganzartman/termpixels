@@ -50,8 +50,6 @@ class Screen:
         self._w = 0
         self._h = 0
         self._pixels = []
-        self.paint_fg = Color(255, 255, 255)
-        self.paint_bg = Color(0, 0, 0)
         self.resize(backend.size[0], backend.size[1])
         self.backend.listen("resize", lambda size: self.resize(backend.size[0], backend.size[1]))
         self.show_cursor = False 
@@ -99,8 +97,11 @@ class Screen:
     def show_cursor(self, show):
         self.backend.show_cursor = show
     
-    def at(self, x, y):
+    def at(self, x, y, *, clip=False):
         with self.lock:
+            if clip:
+                x = max(0, min(self.w-1, x))
+                y = max(0, min(self.h-1, y))
             if x >= self.w or x < 0:
                 raise Exception("x position {} out of bounds".format(x))
             if y >= self.h or y < 0:
@@ -145,16 +146,22 @@ class Screen:
         self.backend.bg = pixel.bg
         self.backend.write(pixel.char)
 
-    def print(self, text, x, y):
+    def print(self, text, x, y, *, fg=None, bg=None):
         with self.lock:
-            for ch in text:
-                if x >= self.w:
-                    return
-                pixel = self._pixels[x][y]
-                pixel.char = ch
-                pixel.fg = self.paint_fg
-                pixel.bg = self.paint_bg
-                x += 1
+            tab = x
+            for line in text.splitlines():
+                for ch in line:
+                    if y < 0 or x < 0 or y >= self.h or x >= self.w:
+                        continue
+                    pixel = self._pixels[x][y]
+                    pixel.char = ch
+                    if fg:
+                        pixel.fg = fg
+                    if bg:
+                        pixel.bg = bg
+                    x += 1
+                y += 1
+                x = tab
 
 class PixelData:
     def __init__(self, *, fg=Color(255, 255, 255), bg=Color(0, 0, 0), char=" "):
