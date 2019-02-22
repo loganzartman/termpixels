@@ -25,14 +25,21 @@ class Key:
             return False
 
 class Mouse:
-    def __init__(self, x, y, button, pressed):
+    def __init__(self, x, y, pressed, *, moved=False, left=False, right=False, middle=False, scrollup=False, scrolldown=False):
         self.x = x
         self.y = y
-        self.button = button
-        self.pressed = pressed
+        self.pressed = pressed and not moved
+        self.moved = moved
+        self.left = left
+        self.right = right
+        self.middle = middle
+        self.scrollup = scrollup
+        self.scrolldown = scrolldown
     
     def __repr__(self):
-        return "Mouse(x={}, y={}, button={}, pressed={})".format(self.x, self.y, self.button, self.pressed)
+        param_names = ["x", "y", "pressed", "moved", "left", "right", "middle", "scrollup", "scrolldown"]
+        params = ["{}={}".format(name, repr(getattr(self, name))) for name in param_names if getattr(self, name)]
+        return "Mouse({})".format(", ".join(params))
 
 class KeyParser:
     def __init__(self):
@@ -58,7 +65,33 @@ class SgrMouseParser:
             button = int(parts[0])
             x = int(parts[1]) - 1
             y = int(parts[2]) - 1
-            return Mouse(x, y, button, pressed)
+            return Mouse(x, y, pressed, **SgrMouseParser.decodeButton(button))
+
+    @staticmethod
+    def decodeButton(btn):
+        result = {
+            "moved": False,
+            "left": False,
+            "right": False,
+            "middle": False,
+            "scrollup": False,
+            "scrolldown": False
+            }
+        if btn & 0b100000:
+            result["moved"] = True
+        if btn & 0b1000000:
+            if btn & 0b1:
+                result["scrolldown"] = True
+            else:
+                result["scrollup"] = True
+        else:
+            if not btn & 0b1 and not btn & 0b10:
+                result["left"] = True
+            if btn & 0b10:
+                result["right"] = True
+            if btn & 0b1 and not btn & 0b10:
+                result["middle"] = True
+        return result
 
 def make_key_parser(ti):
     parser = KeyParser()
