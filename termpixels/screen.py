@@ -6,9 +6,10 @@ from termpixels.unix import UnixBackend
 
 class Color:
     def __init__(self, r, g, b):
-        self._r = r
-        self._g = g
-        self._b = b
+        clip = lambda c: max(0, min(255, round(c)))
+        self._r = clip(r)
+        self._g = clip(g)
+        self._b = clip(b)
         self._packed = Color.pack(self)
     
     @property
@@ -27,7 +28,31 @@ class Color:
         try:
             return self._packed == other._packed
         except AttributeError:
-            return False 
+            return False
+        
+    def __add__(self, other):
+        try:
+            return Color(self.r + other.r, self.g + other.g, self.b + other.b)
+        except:
+            pass
+        return Color(self.r + other, self.g + other, self.b + other)
+
+    def __sub__(self, other):
+        try:
+            return Color(self.r - other.r, self.g - other.g, self.b - other.b)
+        except:
+            pass
+        return Color(self.r - other, self.g - other, self.b - other)
+
+    def __mul__(self, other):
+        try:
+            return Color(self.r * other.r, self.g * other.g, self.b * other.b)
+        except:
+            pass
+        return Color(self.r * other, self.g * other, self.b * other)
+    
+    def __repr__(self):
+        return "Color(r={}, g={}, b={})".format(self.r, self.g, self.b)
 
     @staticmethod  
     def pack(col):
