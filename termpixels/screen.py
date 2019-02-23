@@ -187,6 +187,7 @@ class Screen:
                     x += 1
                 y += 1
                 x = tab
+        return (x, y)
 
 class PixelData:
     def __init__(self, *, fg=Color(255, 255, 255), bg=Color(0, 0, 0), char=" "):
