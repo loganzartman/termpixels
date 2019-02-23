@@ -29,6 +29,7 @@ class App:
         finally:
             self.screen.show_cursor = True
             self.screen.update()
+            self.backend.application_keypad = False
             self.backend.mouse_tracking = False
             self.input.stop()
             self.backend.load_screen()
