@@ -18,7 +18,7 @@ class Key:
     
     def __eq__(self, other):
         if type(other) == str:
-            return self.char == other
+            return self.name == other or self.char == other
         try:
             return self.char == other.char and self.name == other.name
         except AttributeError:
