@@ -74,7 +74,7 @@ class UnixBackend(Observable):
     def cursor_pos(self, pos):
         if self._cursor_pos != pos:
             col, row = pos
-            self.write_escape(self._ti.parameterize("cup", row, col)) 
+            self.write_escape(self._ti.parameterize("cup", row, col, require=True)) 
             self._cursor_pos = pos
 
     @property
