@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="termpixels",
-    version="0.0.1",
+    version="0.0.2",
     author="Logan",
     author_email="logan.zartman@utexas.edu",
     description="Terminal I/O with a pixel-like abstraction",
