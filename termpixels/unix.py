@@ -248,6 +248,7 @@ class UnixInput(Observable):
                 group_timeout = 0
     
     def parse_group(self, chars):
+        self.emit("raw_input", chars)
         while len(chars) > 0:
             results = [*self._key_parser.parse(chars), *self._mouse_parser.parse(chars)]
             if len(results) > 0:
