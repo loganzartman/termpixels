@@ -1,6 +1,7 @@
 import termios
 import tty
 import sys
+import os
 import threading 
 import queue
 import signal
@@ -11,10 +12,25 @@ from termpixels.observable import Observable
 from termpixels.terminfo import Terminfo
 from termpixels.unix_keys import Key, make_key_parser, make_mouse_parser
 
+def detect_truecolor(terminfo=None):
+    """Detect true-color (24-bit) color support
+    """
+    # check
+
+    if "COLORTERM" in os.environ:
+        return True
+    if "truecolor" in os.environ["TERM"]:
+        return True
+    if terminfo is not None:
+        if terminfo.flag("RGB"):
+            return True
+    return False
+
 class UnixBackend(Observable):
     def __init__(self):
         super().__init__()
         self._ti = Terminfo()
+        self.truecolor = detect_truecolor(self._ti)
         self._cursor_pos = None
         self._fg = None
         self._bg = None
@@ -81,7 +97,10 @@ class UnixBackend(Observable):
     @fg.setter
     def fg(self, color):
         if self._fg != color:
-            self.write_escape(self._ti.parameterize("setaf", self.color_auto(color)))
+            if self.truecolor:
+                self.write_escape("\x1b[38;2;{};{};{}m".format(color.r, color.g, color.b))
+            else:
+                self.write_escape(self._ti.parameterize("setaf", self.color_auto(color)))
             self._fg = color
     
     @property
@@ -91,7 +110,10 @@ class UnixBackend(Observable):
     @bg.setter
     def bg(self, color):
         if self._bg != color:
-            self.write_escape(self._ti.parameterize("setab", self.color_auto(color)))
+            if self.truecolor:
+                self.write_escape("\x1b[48;2;{};{};{}m".format(color.r, color.g, color.b))
+            else:
+                self.write_escape(self._ti.parameterize("setab", self.color_auto(color)))
             self._bg = color
     
     @property
@@ -121,12 +143,10 @@ class UnixBackend(Observable):
         self.write_escape(self._ti.parameterize("rmcup"))
     
     def color_auto(self, color):
-        col = 0
         if self._ti.num("colors") == 256:
-            col = self.color_to_256(color)
+            return self.color_to_256(color)
         else:
-            col = self.color_to_16(color)
-        return col
+            return self.color_to_16(color)
 
     def color_to_16(self, color):
         """Convert color into ANSI 16-color format.
@@ -160,6 +180,9 @@ class UnixBackend(Observable):
             output += scale(color.g) * 6
             output += scale(color.r) * 6 * 6
         return output
+    
+    def color_to_truecolor(self, color):
+        return (color.r, color.g, color.b)
 
     def clear_screen(self):
         self.cursor_pos = (0, 0)

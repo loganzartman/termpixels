@@ -1,4 +1,3 @@
-import sys
 from termpixels.unix import UnixBackend, UnixInput
 
 def detect_backend():

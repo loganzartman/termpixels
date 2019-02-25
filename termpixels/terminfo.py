@@ -9,7 +9,7 @@ class Terminfo:
     
     @lru_cache(128)
     def flag(self, name):
-        return curses.tigetflag(name)
+        return curses.tigetflag(name) > 0
     
     @lru_cache(128)
     def num(self, name):

@@ -1,14 +1,18 @@
 from time import sleep
-from termpixels.screen import Screen, Color, PixelData
-from termpixels.unix import UnixBackend
+from termpixels.screen import Color
+from termpixels.app import App
 
-s = Screen(UnixBackend())
-s.show_cursor = False
-for x in range(s.w):
-    for y in range(s.h):
-        fx = x / s.w
-        fy = y / s.h
-        s.at(x, y).bg = Color(int(fx * 255), int(fy * 255), 0)
-s.update()
-while True:
-    sleep(1/60)
+class ColorTest(App):
+    def __init__(self):
+        super().__init__()
+    
+    def on_frame(self):
+        self.screen.clear()
+        for x in range(self.screen.w):
+            for y in range(self.screen.h):
+                fx = x / self.screen.w
+                fy = y / self.screen.h
+                self.screen.print(" ", x, y, bg=Color.rgb(fx, fy, 0))
+        self.screen.update()
+
+ColorTest().start()
