@@ -1,3 +1,4 @@
+import re
 from copy import copy
 from termpixels.terminfo import Terminfo
 
@@ -49,23 +50,27 @@ class KeyParser:
         self.pattern_key_pairs[pattern] = key
     
     def parse(self, group):
+        matches = []
         for pattern, key in self.pattern_key_pairs.items():
             if group.startswith(pattern):
-                return copy(key)
-        return None
+                matches.append((pattern, copy(key)))
+        return matches
 
 class SgrMouseParser:
     def __init__(self, mouse_prefix):
-        self.mouse_prefix = mouse_prefix
+        self.regex = re.compile(r"\x1b\[(?:\<|M)(.+);(.+);(.+)(m|M)")
     
     def parse(self, group):
-        if group.startswith(self.mouse_prefix):
-            pressed = group[-1] == "M"
-            parts = group[len(self.mouse_prefix):-1].split(";")
-            button = int(parts[0])
-            x = int(parts[1]) - 1
-            y = int(parts[2]) - 1
-            return Mouse(x, y, pressed, **SgrMouseParser.decodeButton(button))
+        match = self.regex.match(group)
+        if match is None:
+            return []
+        
+        pressed = match.group(4) == "M"
+        button = int(match.group(1))
+        x = int(match.group(2)) - 1
+        y = int(match.group(3)) - 1
+        mouse = Mouse(x, y, pressed, **SgrMouseParser.decodeButton(button))
+        return [(match.group(0), mouse)]
 
     @staticmethod
     def decodeButton(btn):

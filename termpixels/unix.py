@@ -10,7 +10,7 @@ import struct
 from queue import Queue
 from termpixels.observable import Observable
 from termpixels.terminfo import Terminfo
-from termpixels.unix_keys import Key, make_key_parser, make_mouse_parser
+from termpixels.unix_keys import Key, Mouse, make_key_parser, make_mouse_parser
 
 def detect_truecolor(terminfo=None):
     """Detect true-color (24-bit) color support
@@ -248,17 +248,21 @@ class UnixInput(Observable):
                 group_timeout = 0
     
     def parse_group(self, chars):
-        kpr = self._key_parser.parse(chars)
-        if kpr:
-            self.emit("key", kpr)
-            return
-        mpr = self._mouse_parser.parse(chars)
-        if mpr:
-            self.emit("mouse", mpr)
-            return
-        if chars[0] != "\x1b":
-            for ch in chars:
-                self.emit("key", Key(char=ch))
+        while len(chars) > 0:
+            results = [*self._key_parser.parse(chars), *self._mouse_parser.parse(chars)]
+            if len(results) > 0:
+                results.sort(key=lambda i: len(i[0]), reverse=True)
+                match, event = results[0]
+                if isinstance(event, Key):
+                    self.emit("key", event)
+                if isinstance(event, Mouse):
+                    self.emit("mouse", event)
+                chars = chars[len(match):]
+            elif chars[0] != "\x1b":
+                self.emit("key", Key(char=chars[0]))
+                chars = chars[1:]
+            else:
+                chars = chars[1:]
 
     def set_cbreak(self, on = True):
         if on:
