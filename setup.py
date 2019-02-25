@@ -4,7 +4,7 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name="termpixels-logan-z",
+    name="termpixels",
     version="0.0.1",
     author="Logan",
     author_email="logan.zartman@utexas.edu",
