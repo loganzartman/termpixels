@@ -225,14 +225,15 @@ class UnixInput(Observable):
                 group_timeout = 0
     
     def parse_group(self, chars):
-        if chars[0] == "\x1b":
-            kpr = self._key_parser.parse(chars)
-            if kpr:
-                self.emit("key", kpr)
-            mpr = self._mouse_parser.parse(chars)
-            if mpr:
-                self.emit("mouse", mpr)
-        else:
+        kpr = self._key_parser.parse(chars)
+        if kpr:
+            self.emit("key", kpr)
+            return
+        mpr = self._mouse_parser.parse(chars)
+        if mpr:
+            self.emit("mouse", mpr)
+            return
+        if chars[0] != "\x1b":
             for ch in chars:
                 self.emit("key", Key(char=ch))
 

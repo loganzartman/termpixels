@@ -97,6 +97,8 @@ def make_key_parser(ti):
     parser = KeyParser()
     # special keys
     names = {
+        "kbs": "backspace",
+        "kcbt": "backtab",
         "khome": "home",
         "kend": "end",
         "kich1": "insert",
@@ -112,12 +114,21 @@ def make_key_parser(ti):
         seq = ti.parameterize(code)
         if seq:
             parser.register_key(seq.decode("ascii"), Key(name=name))
+    
+    # terminfo files seem to have bad backspace (kbs) values; just register both
+    parser.register_key(chr(8), Key(name="backspace"))
+    parser.register_key(chr(127), Key(name="backspace"))
+
+    parser.register_key("\t", Key(name="tab", char="\t"))
 
     # function keys
     for i in range(1, 64):
         seq = ti.string("kf{}".format(i))
         if seq:
             parser.register_key(seq.decode("ascii"), Key(name="f{}".format(i)))
+    
+    # must be last
+    parser.register_key("\x1b", Key(name="escape"))
     return parser
 
 def make_mouse_parser(ti):
