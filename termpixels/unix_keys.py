@@ -26,20 +26,22 @@ class Key:
             return False
 
 class Mouse:
-    def __init__(self, x, y, *, down=False, moved=False, up=False, left=False, right=False, middle=False, scrollup=False, scrolldown=False):
+    def __init__(self, x, y, *, button=None, action=None):
         self.x = x
         self.y = y
-        self.down = down
-        self.moved = moved
-        self.up = up
-        self.left = left
-        self.right = right
-        self.middle = middle
-        self.scrollup = scrollup
-        self.scrolldown = scrolldown
+        self.button = button
+        self.action = action
+        self.down = action == "down"
+        self.moved = action == "moved"
+        self.up = action == "up"
+        self.left = button == "left"
+        self.right = button == "right"
+        self.middle = button == "middle"
+        self.scrollup = button == "scrollup"
+        self.scrolldown = button == "scrolldown"
     
     def __repr__(self):
-        param_names = ["x", "y", "down", "moved", "up", "left", "right", "middle", "scrollup", "scrolldown"]
+        param_names = ["x", "y", "button", "action"]
         params = ["{}={}".format(name, repr(getattr(self, name))) for name in param_names if getattr(self, name)]
         return "Mouse({})".format(", ".join(params))
 
@@ -78,39 +80,32 @@ class SgrMouseParser:
 
     @staticmethod
     def decodeButton(btn, pressed):
-        result = {
-            "moved": False,
-            "left": False,
-            "right": False,
-            "middle": False,
-            "scrollup": False,
-            "scrolldown": False,
-            "down": False,
-            "up": False
-            }
+        action = None
+        button = None
+
         # detect action
         if btn & MASK_MOVED:
-            result["moved"] = True
+            action = "moved"
         elif pressed:
-            result["down"] = True
+            action = "down"
         else:
-            result["up"] = True
+            action = "up"
 
         # detect button
         if btn & MASK_WHEEL:
             if btn & MASK_BUTTON == 0:
-                result["scrollup"] = True
+                button = "scrollup"
             else:
-                result["scrolldown"] = True
+                button = "scrolldown"
         else:
-            button = btn & MASK_BUTTON
-            if button == 0:
-                result["left"] = True
-            elif button == 1:
-                result["middle"] = True
-            elif button == 2:
-                result["right"] = True
-        return result
+            code = btn & MASK_BUTTON
+            if code == 0:
+                button = "left"
+            elif code == 1:
+                button = "middle"
+            elif code == 2:
+                button = "right"
+        return {"action": action, "button": button}
 
 def make_key_parser(ti):
     parser = KeyParser()
