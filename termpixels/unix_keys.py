@@ -26,11 +26,12 @@ class Key:
             return False
 
 class Mouse:
-    def __init__(self, x, y, pressed, *, moved=False, left=False, right=False, middle=False, scrollup=False, scrolldown=False):
+    def __init__(self, x, y, *, down=False, moved=False, up=False, left=False, right=False, middle=False, scrollup=False, scrolldown=False):
         self.x = x
         self.y = y
-        self.pressed = pressed and not moved
+        self.down = down
         self.moved = moved
+        self.up = up
         self.left = left
         self.right = right
         self.middle = middle
@@ -38,7 +39,7 @@ class Mouse:
         self.scrolldown = scrolldown
     
     def __repr__(self):
-        param_names = ["x", "y", "pressed", "moved", "left", "right", "middle", "scrollup", "scrolldown"]
+        param_names = ["x", "y", "down", "moved", "up", "left", "right", "middle", "scrollup", "scrolldown"]
         params = ["{}={}".format(name, repr(getattr(self, name))) for name in param_names if getattr(self, name)]
         return "Mouse({})".format(", ".join(params))
 
@@ -56,7 +57,10 @@ class KeyParser:
                 matches.append((pattern, copy(key)))
         return matches
 
-class SgrMouseParser:
+MASK_MOVED = 0b100000
+MASK_BUTTON = 0b11
+MASK_WHEEL = 0b1000000
+class SgrMouseParser:    
     def __init__(self, mouse_prefix):
         self.regex = re.compile(r"\x1b\[(?:\<|M)(.+);(.+);(.+)(m|M)")
     
@@ -69,33 +73,43 @@ class SgrMouseParser:
         button = int(match.group(1))
         x = int(match.group(2)) - 1
         y = int(match.group(3)) - 1
-        mouse = Mouse(x, y, pressed, **SgrMouseParser.decodeButton(button))
+        mouse = Mouse(x, y, **SgrMouseParser.decodeButton(button, pressed))
         return [(match.group(0), mouse)]
 
     @staticmethod
-    def decodeButton(btn):
+    def decodeButton(btn, pressed):
         result = {
             "moved": False,
             "left": False,
             "right": False,
             "middle": False,
             "scrollup": False,
-            "scrolldown": False
+            "scrolldown": False,
+            "down": False,
+            "up": False
             }
-        if btn & 0b100000:
+        # detect action
+        if btn & MASK_MOVED:
             result["moved"] = True
-        if btn & 0b1000000:
-            if btn & 0b1:
-                result["scrolldown"] = True
-            else:
-                result["scrollup"] = True
+        elif pressed:
+            result["down"] = True
         else:
-            if not btn & 0b1 and not btn & 0b10:
+            result["up"] = True
+
+        # detect button
+        if btn & MASK_WHEEL:
+            if btn & MASK_BUTTON == 0:
+                result["scrollup"] = True
+            else:
+                result["scrolldown"] = True
+        else:
+            button = btn & MASK_BUTTON
+            if button == 0:
                 result["left"] = True
-            if btn & 0b10:
-                result["right"] = True
-            if btn & 0b1 and not btn & 0b10:
+            elif button == 1:
                 result["middle"] = True
+            elif button == 2:
+                result["right"] = True
         return result
 
 def make_key_parser(ti):

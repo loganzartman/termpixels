@@ -37,6 +37,9 @@ class Color:
             pass
         return Color(self.r + other, self.g + other, self.b + other)
 
+    def __radd__(self, other):
+        return self + other
+
     def __sub__(self, other):
         try:
             return Color(self.r - other.r, self.g - other.g, self.b - other.b)
@@ -44,12 +47,22 @@ class Color:
             pass
         return Color(self.r - other, self.g - other, self.b - other)
 
+    def __rsub__(self, other):
+        try:
+            return Color(other.r - self.r, other.g - self.g, other.b - self.b)
+        except:
+            pass
+        return Color(other - self.r, other - self.g, other - self.b)
+
     def __mul__(self, other):
         try:
             return Color(self.r * other.r, self.g * other.g, self.b * other.b)
         except:
             pass
         return Color(self.r * other, self.g * other, self.b * other)
+
+    def __rmul__(self, other):
+        return self * other
     
     def __repr__(self):
         return "Color(r={}, g={}, b={})".format(self.r, self.g, self.b)

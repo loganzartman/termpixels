@@ -1,4 +1,3 @@
-from random import random
 from termpixels.app import App
 from termpixels.screen import Color
 
@@ -7,14 +6,16 @@ class MouseTestApp(App):
         super().__init__(mouse=True)
     
     def on_mouse(self, mouse):
-        self.screen.print(" ", mouse.x, mouse.y, bg=Color.rgb(0, random(), 0))
-        self.screen.print(repr(mouse), 1, 3)
-    
-    def on_frame(self):
+        self.screen.clear(bg=Color(0,0,0), fg=Color(255,255,255))
+        self.draw_crosshair(mouse.x, mouse.y, fg=Color(127,127,0))
+        self.screen.print(repr(mouse), 1, 1)
         self.screen.update()
-        self.screen.clear()
-        self.screen.paint_bg = Color(0,0,0)
-        self.screen.print(str(self.screen._update_count), 1, 1)
-        self.screen.print(str(self.screen._update_duration), 1, 2)
+    
+    def draw_crosshair(self, x, y, **kwargs):
+        for r in range(self.screen.h):
+            self.screen.print("┃", x, r, **kwargs)
+        for c in range(self.screen.w):
+            self.screen.print("━", c, y, **kwargs)
+        self.screen.print("╋", x, y, **kwargs)
 
 MouseTestApp().start()
