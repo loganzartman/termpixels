@@ -38,6 +38,7 @@ class UnixBackend(Observable):
         self._mouse_tracking = None
         self._size_dirty = True 
         self._size = None
+        self._window_title = None
 
         self._sigwinch_event = threading.Event()
         self._sigwinch_consumer = threading.Thread(target=self.watch_sigwinch, daemon=True)
@@ -135,6 +136,18 @@ class UnixBackend(Observable):
             raise Exception("Terminal does not support mouse input")
         self.write_escape(b"\x1b[?1003" + (b"h" if enabled else b"l")) # xterm all-motion mouse tracking
         self.write_escape(b"\x1b[?1006" + (b"h" if enabled else b"l")) # xterm SGR mouse format
+    
+    @property
+    def window_title(self):
+        return self._window_title
+    
+    @window_title.setter
+    def window_title(self, title):
+        if self.window_title != title:
+            self.write_escape(self._ti.parameterize("tsl", require=True)) # to status line
+            self.write(title)
+            self.write_escape(self._ti.parameterize("fsl", require=True)) # back from status line
+            self._window_title = title
     
     def save_screen(self):
         self.write_escape(self._ti.parameterize("smcup"))
