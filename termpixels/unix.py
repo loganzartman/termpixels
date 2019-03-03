@@ -224,6 +224,7 @@ class UnixInput(Observable):
         self._key_parser = make_key_parser(self._ti)
         self._mouse_parser = make_mouse_parser(self._ti)
 
+        self._exited_event = threading.Event()
         self._input_queue = Queue()
         self._collector = threading.Thread(target=self.collector_func, daemon=True)
         self._grouper = threading.Thread(target=self.grouper_func, daemon=True)
@@ -233,7 +234,7 @@ class UnixInput(Observable):
         return self._cbreak
 
     def collector_func(self):
-        while True:
+        while not self._exited_event.is_set():
             ch = self.getch()
             self._input_queue.put(ch)
     
@@ -244,7 +245,7 @@ class UnixInput(Observable):
         def dump():
             self.parse_group("".join(buffer))
             buffer.clear()
-        while True:
+        while not self._exited_event.is_set():
             try:
                 timeout = group_timeout if grouping else None
                 ch = self._input_queue.get(timeout=timeout)
@@ -294,6 +295,7 @@ class UnixInput(Observable):
 
     def stop(self):
         self.set_cbreak(False)
+        self._exited_event.set()
     
     def getch(self):
         if not self.cbreak:
