@@ -1,11 +1,16 @@
 import curses
 import operator
 import re
+import os
 from functools import lru_cache
 
 class Terminfo:
     def __init__(self):
         curses.setupterm()
+
+    @property
+    def termname(self):
+        return os.environ["TERM"] 
     
     @lru_cache(128)
     def flag(self, name):

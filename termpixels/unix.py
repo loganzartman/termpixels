@@ -26,11 +26,23 @@ def detect_truecolor(terminfo=None):
             return True
     return False
 
+def detect_color_mode(terminfo=None):
+    if detect_truecolor(terminfo):
+        return "truecolor"
+    if not terminfo:
+        return "16-color" # hopefully
+
+    if terminfo.num("colors") == 256:
+        return "256-color"
+    if terminfo.num("colors") >= 8:
+        return "16-color" 
+    return "monochrome"
+
 class UnixBackend(Observable):
     def __init__(self):
         super().__init__()
         self._ti = Terminfo()
-        self.truecolor = detect_truecolor(self._ti)
+        self.color_mode = detect_color_mode(self._ti)
         self._cursor_pos = None
         self._fg = None
         self._bg = None
@@ -54,6 +66,10 @@ class UnixBackend(Observable):
             self._sigwinch_event.clear()
             self._size_dirty = True
             self.emit("resize")
+
+    @property
+    def terminal_name(self):
+        return self._ti.termname
     
     @property
     def size(self):
@@ -98,7 +114,7 @@ class UnixBackend(Observable):
     @fg.setter
     def fg(self, color):
         if self._fg != color:
-            if self.truecolor:
+            if self.color_mode == "truecolor":
                 self.write_escape("\x1b[38;2;{};{};{}m".format(color.r, color.g, color.b))
             else:
                 self.write_escape(self._ti.parameterize("setaf", self.color_auto(color)))
@@ -111,7 +127,7 @@ class UnixBackend(Observable):
     @bg.setter
     def bg(self, color):
         if self._bg != color:
-            if self.truecolor:
+            if self.color_mode == "truecolor":
                 self.write_escape("\x1b[48;2;{};{};{}m".format(color.r, color.g, color.b))
             else:
                 self.write_escape(self._ti.parameterize("setab", self.color_auto(color)))
@@ -156,7 +172,7 @@ class UnixBackend(Observable):
         self.write_escape(self._ti.parameterize("rmcup"))
     
     def color_auto(self, color):
-        if self._ti.num("colors") == 256:
+        if self.color_mode == "256-color":
             return self.color_to_256(color)
         else:
             return self.color_to_16(color)
