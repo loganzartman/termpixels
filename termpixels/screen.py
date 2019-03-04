@@ -186,8 +186,11 @@ class Screen:
 
     def print(self, text, x, y, *, fg=None, bg=None):
         with self.lock:
+            y0 = y
             tab = x
-            for line in text.splitlines():
+            for linenum, line in enumerate(text.splitlines()):
+                y = y0 + linenum
+                x = tab
                 for ch in line:
                     if y < 0 or x < 0 or y >= self.h or x >= self.w:
                         continue
@@ -198,8 +201,6 @@ class Screen:
                     if bg:
                         pixel.bg = bg
                     x += 1
-                y += 1
-                x = tab
         return (x, y)
 
 class PixelData:
