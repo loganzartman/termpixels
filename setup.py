@@ -1,11 +1,12 @@
 import setuptools
+import termpixels
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
     name="termpixels",
-    version="0.0.2",
+    version=termpixels.__version__,
     author="Logan",
     author_email="logan.zartman@utexas.edu",
     description="Terminal I/O with a pixel-like abstraction",
