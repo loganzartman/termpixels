@@ -99,24 +99,6 @@ class Screen:
     @property
     def h(self):
         return self._h
-    
-    @property
-    def paint_fg(self):
-        return self._paint_fg
-    
-    @paint_fg.setter
-    def paint_fg(self, value):
-        with self.lock:
-            self._paint_fg = value
-    
-    @property
-    def paint_bg(self):
-        return self._paint_bg
-    
-    @paint_bg.setter
-    def paint_bg(self, value):
-        with self.lock:
-            self._paint_bg = value
 
     def resize(self, w, h):
         with self.lock:
