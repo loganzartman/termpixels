@@ -5,7 +5,29 @@ import colorsys
 from termpixels.unix import UnixBackend
 
 class Color:
-    def __init__(self, r, g, b):
+    def __init__(self, *args):
+        r = 0
+        g = 0
+        b = 0
+
+        if len(args) == 3:
+            r, g, b = args
+        elif len(args) == 1:
+            try:
+                c = Color.unpack(args[0])
+                r = c.r
+                g = c.g
+                b = c.b
+            except:
+                try:
+                    r = args[0][0] * 255
+                    g = args[0][1] * 255
+                    b = args[0][2] * 255
+                except:
+                    raise Exception("Invalid single argument constructor for Color: {}".format(args[0]))
+        else:
+            raise Exception("Invalid constructor for Color: {}".format(args))
+
         clip = lambda c: max(0, min(255, round(c)))
         self._r = clip(r)
         self._g = clip(g)
@@ -29,6 +51,9 @@ class Color:
             return self._packed == other._packed
         except AttributeError:
             return False
+
+    def __hash__(self):
+        return self._packed
         
     def __add__(self, other):
         try:
@@ -70,6 +95,10 @@ class Color:
     @staticmethod  
     def pack(col):
         return (col.r << 16) | (col.g << 8) | (col.b)
+    
+    @staticmethod
+    def unpack(val):
+        return Color(val >> 16, (val >> 8) & 0xFF, val & 0xFF)
     
     @staticmethod
     def rgb(r, g, b):
