@@ -8,7 +8,7 @@ Creating programs that run inside of terminals seems convoluted. The goal of ter
 There are lots of great libraries for coloring terminal output. This one is designed for full-screen applications that completely control the contents of the screen. That means that it automatically saves and clears the screen, resets the cursor position, and accepts input in cbreak mode.
 
 ## Features
-* Unix terminal feature detection with terminfo (via Python [curses](python-curses))
+* Unix terminal feature detection with terminfo (via Python [curses][python-curses])
 * Terminal (re)size detection
 * Asynchronous input
 	* Keyboard input with support for special keys like arrows, function keys, escape, etc.
@@ -19,13 +19,13 @@ There are lots of great libraries for coloring terminal output. This one is desi
 * and more
 
 ## Get it
-This project is on [PyPI](pypi).
+This project is on [PyPI][pypi].
 
 Alternatively, just `pip install -e .` in the root directory.
 
 ## Inspiration
-* [tcell](tcell)
-* [ncurses](ncurses)
+* [tcell][tcell]
+* [ncurses][ncurses]
 
 [python-curses]: https://docs.python.org/3/howto/curses.html
 [tcell]: https://github.com/gdamore/tcell
