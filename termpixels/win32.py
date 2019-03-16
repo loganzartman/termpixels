@@ -54,6 +54,13 @@ class Win32Backend(Observable):
         self._fg = Color.rgb(1,1,1)
         self._bg = Color.rgb(0,0,0)
         self.color_mode = "16-color"
+        self._termname = "Windows Console"
+        if detect_win10_console():
+            self._termname = "Windows Console (Win10)"
+    
+    @property
+    def terminal_name(self):
+        return self._termname
 
     @property
     def fg(self):
