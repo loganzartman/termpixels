@@ -2,7 +2,6 @@ from threading import Lock
 from copy import copy
 from time import perf_counter
 import colorsys
-from termpixels.unix import UnixBackend
 
 class Color:
     def __init__(self, *args):

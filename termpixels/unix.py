@@ -8,6 +8,7 @@ import signal
 import fcntl
 import struct
 from queue import Queue
+from termpixels.color import color_to_16, color_to_256
 from termpixels.observable import Observable
 from termpixels.terminfo import Terminfo
 from termpixels.unix_keys import Key, Mouse, make_key_parser, make_mouse_parser
@@ -43,7 +44,7 @@ class UnixBackend(Observable):
         super().__init__()
         self._ti = Terminfo()
         self.color_mode = detect_color_mode(self._ti)
-        self._cursor_pos = None
+        self._cursor_pos = (0, 0)
         self._fg = None
         self._bg = None
         self._show_cursor = None
@@ -173,45 +174,9 @@ class UnixBackend(Observable):
     
     def color_auto(self, color):
         if self.color_mode == "256-color":
-            return self.color_to_256(color)
+            return color_to_256(color)
         else:
-            return self.color_to_16(color)
-
-    def color_to_16(self, color):
-        """Convert color into ANSI 16-color format.
-        """
-        if color.r == color.g == color.b == 0:
-            return 0
-        bright = sum((color.r, color.g, color.b)) >= 127 * 3
-        r = 1 if color.r > 63 else 0
-        g = 1 if color.g > 63 else 0
-        b = 1 if color.b > 63 else 0
-        return (r | (g << 1) | (b << 2)) + (8 if bright else 0)
-
-    def color_to_256(self, color):
-        """Convert color into ANSI 8-bit color format.
-        Red is converted to 196
-        This converter emits the 216 RGB colors and the 24 grayscale colors.
-        It does not use the 16 named colors.
-        """
-        output = 0
-        if color.r == color.g == color.b:
-            # grayscale case
-            if color.r == 255: # pure white
-                output = 231
-            else:
-                output = 232 + int(color.r / 256 * 24)
-        else:
-            # 216-color RGB
-            scale = lambda c: int(c / 256 * 6)
-            output = 16
-            output += scale(color.b)
-            output += scale(color.g) * 6
-            output += scale(color.r) * 6 * 6
-        return output
-    
-    def color_to_truecolor(self, color):
-        return (color.r, color.g, color.b)
+            return color_to_16(color)
 
     def clear_screen(self):
         self.cursor_pos = (0, 0)
