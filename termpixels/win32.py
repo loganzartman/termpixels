@@ -16,8 +16,8 @@ def detect_win10_console():
         return False
 
 # Windows types
-c_word = ctypes.c_uint
-c_dword = ctypes.c_ulong
+c_word = ctypes.c_ushort
+c_dword = ctypes.c_uint
 
 # Windows structs
 class COORD(Structure):
