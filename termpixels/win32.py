@@ -8,6 +8,7 @@ from termpixels.screen import Color
 from termpixels.color import color_to_16
 from termpixels.observable import Observable
 from termpixels.keys import Key, Mouse
+from termpixels.win32_keys import vk_to_name
 
 def detect_win10_console():
     """Check whether new console features are supported"""
@@ -318,11 +319,19 @@ class Win32Input(Observable):
                 e = buf[i].Event
                 t = buf[i].EventType
                 if t == KEY_EVENT:
-                    c = e.KeyEvent.uChar.UnicodeChar
-                    if c != 0 and e.KeyEvent.bKeyDown:
-                        key = Key(char=str(c))
-                        self.emit("raw_input", key)
-                        self.emit("key", key)
+                    char = e.KeyEvent.uChar.UnicodeChar
+                    code = e.KeyEvent.wVirtualKeyCode
+                    if e.KeyEvent.bKeyDown:
+                        if char != 0:
+                            key = Key(char=chr(char))
+                            self.emit("raw_input", chr(char))
+                            self.emit("key", key)
+                        else:
+                            self.emit("raw_input", code)
+                            name = vk_to_name(code)
+                            if name is not None:
+                                key = Key(name=name)
+                                self.emit("key", key)
                 if t == MOUSE_EVENT:
                     pos = e.MouseEvent.dwMousePosition
                     
