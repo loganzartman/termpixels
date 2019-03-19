@@ -26,6 +26,23 @@ class COORD(Structure):
         ("Y", ctypes.c_short)
     ]
 
+class SMALL_RECT(Structure):
+    _fields_ = [
+        ("Left", ctypes.c_short),
+        ("Top", ctypes.c_short),
+        ("Right", ctypes.c_short),
+        ("Bottom", ctypes.c_short)
+    ]
+
+class CONSOLE_SCREEN_BUFFER_INFO(Structure):
+    _fields_ = [
+        ("dwSize", COORD),
+        ("dwCursorPosition", COORD),
+        ("wAttributes", c_word),
+        ("srWindow", SMALL_RECT),
+        ("dwMaximumWindowSize", COORD)
+    ]
+
 # Misc Windows constants
 STD_INPUT_HANDLE = c_dword(-10)
 STD_OUTPUT_HANDLE = c_dword(-11)
@@ -71,6 +88,14 @@ class Win32Backend(Observable):
     @property
     def terminal_name(self):
         return self._termname
+    
+    @property
+    def size(self):
+        csbi = CONSOLE_SCREEN_BUFFER_INFO()
+        windll.kernel32.GetConsoleScreenBufferInfo(self._stdout, byref(csbi))
+        w = csbi.srWindow.Right - csbi.srWindow.Left + 1
+        h = csbi.srWindow.Bottom - csbi.srWindow.Top + 1
+        return (w, h)
 
     @property
     def fg(self):
