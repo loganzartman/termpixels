@@ -309,7 +309,9 @@ class Win32Input(Observable):
                         self.emit("raw_input", key)
                         self.emit("key", key)
                 if t == MOUSE_EVENT:
-                    pass
+                    pos = e.MouseEvent.dwMousePosition
+                    mouse = Mouse(x=pos.X, y=pos.Y)
+                    self.emit("mouse", mouse)
                 if t == WINDOW_BUFFER_SIZE_EVENT:
                     pass
 
@@ -319,7 +321,7 @@ class Win32Input(Observable):
 
         self._old_mode = DWORD()
         windll.kernel32.GetConsoleMode(self._stdin, byref(self._old_mode))
-        windll.kernel32.SetConsoleMode(self._stdin, ENABLE_PROCESSED_INPUT | ENABLE_WINDOW_INPUT)
+        windll.kernel32.SetConsoleMode(self._stdin, ENABLE_EXTENDED_FLAGS | ENABLE_PROCESSED_INPUT | ENABLE_WINDOW_INPUT | ENABLE_MOUSE_INPUT)
         
         self._reader.start()
     
