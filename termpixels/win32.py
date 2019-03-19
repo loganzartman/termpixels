@@ -129,6 +129,14 @@ class Win32Backend(Observable):
                 self._update_char_attrs()
     
     @property
+    def application_keypad(self):
+        return NotImplemented
+    
+    @application_keypad.setter
+    def application_keypad(self, v):
+        return NotImplemented
+    
+    @property
     def cursor_pos(self):
         return self._cursor_pos
     
@@ -155,6 +163,9 @@ class Win32Backend(Observable):
         windll.kernel32.SetConsoleActiveScreenBuffer(self._stdout)
         self._active_buffer = self._stdout
     
+    def clear_screen(self):
+        return NotImplemented
+
     def _update_char_attrs(self):
         attr = 0
         attr |= color_win32(self.fg, False)
@@ -177,4 +188,14 @@ class Win32Backend(Observable):
     
     def flush(self):
         # TODO: create alternate screen buffer in init; swap buffers here
+        pass
+
+class Win32Input(Observable):
+    def __init__(self):
+        super().__init__()
+    
+    def start(self):
+        pass
+    
+    def stop(self):
         pass

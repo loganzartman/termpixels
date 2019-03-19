@@ -7,5 +7,9 @@ def detect_backend():
         return Win32Backend()
 
 def detect_input():
-    from termpixels.unix import UnixInput
-    return UnixInput()
+    try:
+        from termpixels.unix import UnixInput
+        return UnixInput()
+    except:
+        from termpixels.win32 import Win32Input
+        return Win32Input()
