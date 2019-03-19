@@ -23,6 +23,7 @@ DWORD = ctypes.c_uint
 CHAR = ctypes.c_byte
 WCHAR = ctypes.c_ushort
 UINT = ctypes.c_uint
+BOOL = ctypes.c_int
 
 # Windows structs
 class COORD(Structure):
@@ -236,7 +237,7 @@ class KeyEventRecordChar(Union):
 
 class KEY_EVENT_RECORD(Structure):
     _fields_ = [
-        ("bKeyDown", ctypes.c_bool),
+        ("bKeyDown", BOOL),
         ("wRepeatCount", WORD),
         ("wVirtualKeyCode", WORD),
         ("wVirtualScanCode", WORD),
@@ -264,7 +265,7 @@ class MENU_EVENT_RECORD(Structure):
 
 class FOCUS_EVENT_RECORD(Structure):
     _fields_ = [
-        ("bSetFocus", ctypes.c_bool)
+        ("bSetFocus", BOOL)
     ]
 
 class InputRecordEvent(Union):
@@ -286,6 +287,9 @@ class Win32Input(Observable):
     def __init__(self):
         super().__init__()
         self._stdin = windll.kernel32.GetStdHandle(STD_INPUT_HANDLE)
+        self._old_mode = None
+        self._old_cp = None
+
         self._exit_event = threading.Event()
         self._reader = threading.Thread(target=self._read, daemon=True)
     
@@ -299,15 +303,27 @@ class Win32Input(Observable):
                 e = buf[i].Event
                 t = buf[i].EventType
                 if t == KEY_EVENT:
-                    c = str(e.KeyEvent.uChar.UnicodeChar)
-                    self.emit("key", Key(name=c))
+                    c = e.KeyEvent.uChar.UnicodeChar
+                    if c != 0 and e.KeyEvent.bKeyDown:
+                        key = Key(char=str(c))
+                        self.emit("raw_input", key)
+                        self.emit("key", key)
                 if t == MOUSE_EVENT:
                     pass
                 if t == WINDOW_BUFFER_SIZE_EVENT:
                     pass
 
     def start(self):
+        self._old_cp = windll.kernel32.GetConsoleCP()
+        windll.kernel32.SetConsoleCP(65001) # UTF-8 code page
+
+        self._old_mode = DWORD()
+        windll.kernel32.GetConsoleMode(self._stdin, byref(self._old_mode))
+        windll.kernel32.SetConsoleMode(self._stdin, ENABLE_PROCESSED_INPUT | ENABLE_WINDOW_INPUT)
+        
         self._reader.start()
     
     def stop(self):
+        windll.kernel32.SetConsoleMode(self._stdin, self._old_mode)
+        windll.kernel32.SetConsoleCP(self._old_cp)
         self._exit_event.set()
