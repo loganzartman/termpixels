@@ -33,7 +33,8 @@ BACKGROUND_GREEN = 32
 BACKGROUND_RED = 64
 BACKGROUND_INTENSITY = 128
 
-def color_win32(bits, bg):
+def color_win32(col, bg):
+    bits = color_to_16(col)
     out = 0
     if bits & 0b1:
         out |= FOREGROUND_RED
@@ -86,10 +87,8 @@ class Win32Backend(Observable):
     
     def _update_char_attrs(self):
         attr = 0
-        fg = color_to_16(self.fg)
-        bg = color_to_16(self.bg)
-        attr |= color_win32(fg, False)
-        attr |= color_win32(bg, True)
+        attr |= color_win32(self.fg, False)
+        attr |= color_win32(self.bg, True)
         windll.kernel32.SetConsoleTextAttribute(
             self._stdout,
             c_word(attr)
