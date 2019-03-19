@@ -1,6 +1,11 @@
 # termpixels
 *the terminal as a character-cell matrix*
 
+## Get it
+This project is on [PyPI][pypi].
+
+Alternatively, just `pip install -e .` in the root directory.
+
 ## Purpose
 Creating programs that run inside of terminals seems convoluted. The goal of termpixels is to abstract the terminal into a 2D array of "pixels", or character cells, which each contain a single text character, a foreground color, and a background color. termpixels allows you to modify the screen contents anywhere, at any time, and then handles updating the terminal automatically.
 
@@ -48,11 +53,6 @@ if __name__ == "__main__":
 * No reliance on ncurses except for terminfo lookup
 * 100% Python
 * and more
-
-## Get it
-This project is on [PyPI][pypi].
-
-Alternatively, just `pip install -e .` in the root directory.
 
 ## Inspiration
 * [tcell][tcell]
