@@ -2,6 +2,7 @@ import platform
 import ctypes
 from ctypes import windll
 from ctypes import byref
+from ctypes import Structure
 from termpixels.screen import Color
 from termpixels.color import color_to_16
 from termpixels.observable import Observable
@@ -17,6 +18,13 @@ def detect_win10_console():
 # Windows types
 c_word = ctypes.c_uint
 c_dword = ctypes.c_ulong
+
+# Windows structs
+class COORD(Structure):
+    _fields_ = [
+        ("X", ctypes.c_short),
+        ("Y", ctypes.c_short)
+    ]
 
 # Misc Windows constants
 STD_INPUT_HANDLE = c_dword(-10)
@@ -54,6 +62,7 @@ class Win32Backend(Observable):
         self._stdout = windll.kernel32.GetStdHandle(STD_OUTPUT_HANDLE)
         self._fg = Color.rgb(1,1,1)
         self._bg = Color.rgb(0,0,0)
+        self._cursor_pos = None
         self.color_mode = "16-color"
         self._termname = "Windows Console"
         if detect_win10_console():
@@ -85,6 +94,17 @@ class Win32Backend(Observable):
             if self.color_mode == "16-color":
                 self._update_char_attrs()
     
+    @property
+    def cursor_pos(self):
+        return self._cursor_pos
+    
+    @cursor_pos.setter
+    def cursor_pos(self, pos):
+        if self._cursor_pos != pos:
+            col, row = pos
+            windll.kernel32.SetConsoleCursorPosition(self._stdout, COORD(col, row))
+            self._cursor_pos = pos
+    
     def _update_char_attrs(self):
         attr = 0
         attr |= color_win32(self.fg, False)
@@ -103,6 +123,7 @@ class Win32Backend(Observable):
             byref(n_written),
             None
         )
+        self._cursor_pos = (self._cursor_pos[0] + len(text), self._cursor_pos[1])
     
     def flush(self):
         # TODO: create alternate screen buffer in init; swap buffers here
