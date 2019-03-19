@@ -113,6 +113,7 @@ class Win32Backend(Observable):
         self._bg = Color.rgb(0,0,0)
         self.color_mode = "16-color"
         self._cursor_pos = None
+        self._attr = WORD(0)
 
         self._termname = "Windows Console"
         if detect_win10_console():
@@ -167,9 +168,7 @@ class Win32Backend(Observable):
     @cursor_pos.setter
     def cursor_pos(self, pos):
         if self._cursor_pos != pos:
-            col, row = pos
-            windll.kernel32.SetConsoleCursorPosition(self._active_buffer, COORD(col, row))
-            self._cursor_pos = pos
+            self._cursor_pos = (pos[0], pos[1])
     
     def enter_alt_buffer(self):
         if not self._alt_buffer:
@@ -202,19 +201,24 @@ class Win32Backend(Observable):
         attr = 0
         attr |= color_win32(self.fg, False)
         attr |= color_win32(self.bg, True)
-        windll.kernel32.SetConsoleTextAttribute(
-            self._active_buffer,
-            WORD(attr)
-        )
+        self._attr = WORD(attr)
     
     def write(self, text):
         n_written = DWORD()
-        windll.kernel32.WriteConsoleW(
+        x, y = self._cursor_pos
+        windll.kernel32.FillConsoleOutputAttribute(
+            self._active_buffer,
+            self._attr,
+            len(text),
+            COORD(X=x, Y=y),
+            byref(n_written)
+        )
+        windll.kernel32.WriteConsoleOutputCharacterW(
             self._active_buffer,
             text,
             len(text),
-            byref(n_written),
-            None
+            COORD(X=x, Y=y),
+            byref(n_written)
         )
         self._cursor_pos = (self._cursor_pos[0] + len(text), self._cursor_pos[1])
     
@@ -294,7 +298,7 @@ class Win32Input(Observable):
         self._reader = threading.Thread(target=self._read, daemon=True)
     
     def _read(self):
-        MAX_RECORDS = 128
+        MAX_RECORDS = 16
         buf = (INPUT_RECORD * MAX_RECORDS)()
         while not self._exit_event.is_set():
             numRecords = DWORD()
