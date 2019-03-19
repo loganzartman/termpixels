@@ -9,6 +9,7 @@ There are lots of great libraries for coloring terminal output. This one is desi
 
 ## Features
 * Unix terminal feature detection with terminfo (via Python [curses][python-curses])
+* Windows support through Win32 Console API
 * Terminal (re)size detection
 * Asynchronous input
 	* Keyboard input with support for special keys like arrows, function keys, escape, etc.
