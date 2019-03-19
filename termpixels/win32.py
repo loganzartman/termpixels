@@ -233,6 +233,17 @@ MENU_EVENT = 0x0008
 MOUSE_EVENT = 0x0002
 WINDOW_BUFFER_SIZE_EVENT = 0x0004
 
+FROM_LEFT_1ST_BUTTON_PRESSED = 0x0001
+FROM_LEFT_2ND_BUTTON_PRESSED = 0x0004
+FROM_LEFT_3RD_BUTTON_PRESSED = 0x0008
+FROM_LEFT_4TH_BUTTON_PRESSED = 0x0010
+RIGHTMOST_BUTTON_PRESSED = 0x0002
+
+DOUBLE_CLICK = 0x0002
+MOUSE_HWHEELED = 0x0008
+MOUSE_MOVED = 0x0001
+MOUSE_WHEELED = 0x0004
+
 class KeyEventRecordChar(Union):
     _fields_ = [
         ("UnicodeChar", WCHAR),
@@ -314,7 +325,25 @@ class Win32Input(Observable):
                         self.emit("key", key)
                 if t == MOUSE_EVENT:
                     pos = e.MouseEvent.dwMousePosition
-                    mouse = Mouse(x=pos.X, y=pos.Y)
+                    
+                    btn = e.MouseEvent.dwButtonState
+                    button = None
+                    if btn == FROM_LEFT_1ST_BUTTON_PRESSED:
+                        button = "left"
+                    elif btn == FROM_LEFT_2ND_BUTTON_PRESSED:
+                        button = "middle"
+                    elif btn == RIGHTMOST_BUTTON_PRESSED:
+                        button = "right"
+
+                    evt = e.MouseEvent.dwEventFlags
+                    action = None
+                    if evt == MOUSE_MOVED:
+                        action = "moved"
+                    elif button is not None:
+                        action = "down"
+                    # no way to detect up
+
+                    mouse = Mouse(x=pos.X, y=pos.Y, button=button, action=action)
                     self.emit("mouse", mouse)
                 if t == WINDOW_BUFFER_SIZE_EVENT:
                     pass
