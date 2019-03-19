@@ -166,10 +166,10 @@ class UnixBackend(Observable):
             self.write_escape(self._ti.parameterize("fsl", require=True)) # back from status line
             self._window_title = title
     
-    def save_screen(self):
+    def enter_alt_buffer(self):
         self.write_escape(self._ti.parameterize("smcup"))
     
-    def load_screen(self):
+    def exit_alt_buffer(self):
         self.write_escape(self._ti.parameterize("rmcup"))
     
     def color_auto(self, color):

@@ -47,6 +47,11 @@ class CONSOLE_SCREEN_BUFFER_INFO(Structure):
 STD_INPUT_HANDLE = c_dword(-10)
 STD_OUTPUT_HANDLE = c_dword(-11)
 STD_ERROR_HANDLE = c_dword(-12)
+FILE_SHARE_READ = 1
+FILE_SHARE_WRITE = 2
+GENERIC_READ = 0x80000000
+GENERIC_WRITE = 0x40000000
+CONSOLE_TEXTMODE_BUFFER = 1
 
 # wincon.h constants
 FOREGROUND_BLUE = 1
@@ -77,10 +82,14 @@ class Win32Backend(Observable):
     def __init__(self):
         super().__init__()
         self._stdout = windll.kernel32.GetStdHandle(STD_OUTPUT_HANDLE)
+        self._alt_buffer = None
+        self._active_buffer = self._stdout
+        
         self._fg = Color.rgb(1,1,1)
         self._bg = Color.rgb(0,0,0)
-        self._cursor_pos = None
         self.color_mode = "16-color"
+        self._cursor_pos = None
+
         self._termname = "Windows Console"
         if detect_win10_console():
             self._termname = "Windows Console (Win10)"
@@ -92,7 +101,7 @@ class Win32Backend(Observable):
     @property
     def size(self):
         csbi = CONSOLE_SCREEN_BUFFER_INFO()
-        windll.kernel32.GetConsoleScreenBufferInfo(self._stdout, byref(csbi))
+        windll.kernel32.GetConsoleScreenBufferInfo(self._active_buffer, byref(csbi))
         w = csbi.srWindow.Right - csbi.srWindow.Left + 1
         h = csbi.srWindow.Bottom - csbi.srWindow.Top + 1
         return (w, h)
@@ -127,22 +136,38 @@ class Win32Backend(Observable):
     def cursor_pos(self, pos):
         if self._cursor_pos != pos:
             col, row = pos
-            windll.kernel32.SetConsoleCursorPosition(self._stdout, COORD(col, row))
+            windll.kernel32.SetConsoleCursorPosition(self._active_buffer, COORD(col, row))
             self._cursor_pos = pos
+    
+    def enter_alt_buffer(self):
+        if not self._alt_buffer:
+            self._alt_buffer = windll.kernel32.CreateConsoleScreenBuffer(
+                GENERIC_READ | GENERIC_WRITE,
+                FILE_SHARE_READ | FILE_SHARE_WRITE,
+                None, 
+                CONSOLE_TEXTMODE_BUFFER, 
+                None
+            )
+        windll.kernel32.SetConsoleActiveScreenBuffer(self._alt_buffer)
+        self._active_buffer = self._alt_buffer
+    
+    def exit_alt_buffer(self):
+        windll.kernel32.SetConsoleActiveScreenBuffer(self._stdout)
+        self._active_buffer = self._stdout
     
     def _update_char_attrs(self):
         attr = 0
         attr |= color_win32(self.fg, False)
         attr |= color_win32(self.bg, True)
         windll.kernel32.SetConsoleTextAttribute(
-            self._stdout,
+            self._active_buffer,
             c_word(attr)
         )
     
     def write(self, text):
         n_written = c_dword()
         windll.kernel32.WriteConsoleW(
-            self._stdout,
+            self._active_buffer,
             text,
             len(text),
             byref(n_written),

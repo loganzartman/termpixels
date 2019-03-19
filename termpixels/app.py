@@ -5,7 +5,7 @@ from termpixels.detector import detect_backend, detect_input
 class App:
     def __init__(self, *, mouse=False, framerate=30):
         self.backend = detect_backend()
-        self.backend.save_screen()
+        self.backend.enter_alt_buffer()
         self.backend.application_keypad = True
         self.backend.mouse_tracking = mouse
         self.input = detect_input()
@@ -32,7 +32,7 @@ class App:
             self.input.stop()
             self.screen.show_cursor = True
             self.screen.update()
-            self.backend.load_screen()
+            self.backend.exit_alt_buffer()
     
     def on_key(self, data):
         pass
