@@ -7,6 +7,7 @@ from ctypes import Structure, Union
 from termpixels.screen import Color
 from termpixels.color import color_to_16
 from termpixels.observable import Observable
+from termpixels.keys import Key, Mouse
 
 def detect_win10_console():
     """Check whether new console features are supported"""
@@ -17,8 +18,11 @@ def detect_win10_console():
         return False
 
 # Windows types
-c_word = ctypes.c_ushort
-c_dword = ctypes.c_uint
+WORD = ctypes.c_ushort
+DWORD = ctypes.c_uint
+CHAR = ctypes.c_byte
+WCHAR = ctypes.c_ushort
+UINT = ctypes.c_uint
 
 # Windows structs
 class COORD(Structure):
@@ -39,15 +43,15 @@ class CONSOLE_SCREEN_BUFFER_INFO(Structure):
     _fields_ = [
         ("dwSize", COORD),
         ("dwCursorPosition", COORD),
-        ("wAttributes", c_word),
+        ("wAttributes", WORD),
         ("srWindow", SMALL_RECT),
         ("dwMaximumWindowSize", COORD)
     ]
 
 # Misc Windows constants
-STD_INPUT_HANDLE = c_dword(-10)
-STD_OUTPUT_HANDLE = c_dword(-11)
-STD_ERROR_HANDLE = c_dword(-12)
+STD_INPUT_HANDLE = DWORD(-10)
+STD_OUTPUT_HANDLE = DWORD(-11)
+STD_ERROR_HANDLE = DWORD(-12)
 FILE_SHARE_READ = 1
 FILE_SHARE_WRITE = 2
 GENERIC_READ = 0x80000000
@@ -188,7 +192,7 @@ class Win32Backend(Observable):
     def _activate_buffer(self, buf):
         if self._active_buffer is not None:
             windll.kernel32.SetConsoleMode(self._active_buffer, self._old_mode)
-        self._old_mode = c_dword()
+        self._old_mode = DWORD()
         windll.kernel32.GetConsoleMode(buf, byref(self._old_mode))
         windll.kernel32.SetConsoleMode(buf, ENABLE_PROCESSED_OUTPUT)
         self._active_buffer = buf
@@ -199,11 +203,11 @@ class Win32Backend(Observable):
         attr |= color_win32(self.bg, True)
         windll.kernel32.SetConsoleTextAttribute(
             self._active_buffer,
-            c_word(attr)
+            WORD(attr)
         )
     
     def write(self, text):
-        n_written = c_dword()
+        n_written = DWORD()
         windll.kernel32.WriteConsoleW(
             self._active_buffer,
             text,
@@ -226,31 +230,41 @@ WINDOW_BUFFER_SIZE_EVENT = 0x0004
 
 class KeyEventRecordChar(Union):
     _fields_ = [
-        ("UnicodeChar", ctypes.c_wchar),
-        ("AsciiChar", ctypes.c_char)
+        ("UnicodeChar", WCHAR),
+        ("AsciiChar", CHAR)
     ]
 
 class KEY_EVENT_RECORD(Structure):
     _fields_ = [
         ("bKeyDown", ctypes.c_bool),
-        ("wRepeatCount", c_word),
-        ("wVirtualKeyCode", c_word),
-        ("wVirtualScanCode", c_word),
+        ("wRepeatCount", WORD),
+        ("wVirtualKeyCode", WORD),
+        ("wVirtualScanCode", WORD),
         ("uChar", KeyEventRecordChar),
-        ("dwControlKeyState", c_dword)
+        ("dwControlKeyState", DWORD)
     ]
 
 class MOUSE_EVENT_RECORD(Structure):
     _fields_ = [
         ("dwMousePosition", COORD),
-        ("dwButtonState", c_dword),
-        ("dwControlKeyState", c_dword),
-        ("dwEventFlags", c_dword)
+        ("dwButtonState", DWORD),
+        ("dwControlKeyState", DWORD),
+        ("dwEventFlags", DWORD)
     ]
 
 class WINDOW_BUFFER_SIZE_RECORD(Structure):
-    _fields = [
+    _fields_ = [
         ("dwSize", COORD)
+    ]
+
+class MENU_EVENT_RECORD(Structure):
+    _fields_ = [
+        ("dwCommandId", UINT)
+    ]
+
+class FOCUS_EVENT_RECORD(Structure):
+    _fields_ = [
+        ("bSetFocus", ctypes.c_bool)
     ]
 
 class InputRecordEvent(Union):
@@ -258,13 +272,13 @@ class InputRecordEvent(Union):
         ("KeyEvent", KEY_EVENT_RECORD),
         ("MouseEvent", MOUSE_EVENT_RECORD),
         ("WindowBufferSizeEvent", WINDOW_BUFFER_SIZE_RECORD),
-        #("MenuEvent", MENU_EVENT_RECORD),
-        #("FocusEvent", FOCUS_EVENT_RECORD)
+        ("MenuEvent", MENU_EVENT_RECORD),
+        ("FocusEvent", FOCUS_EVENT_RECORD)
     ]
 
 class INPUT_RECORD(Structure):
     _fields_ = [
-        ("EventType", c_word),
+        ("EventType", WORD),
         ("Event", InputRecordEvent)
     ]
 
@@ -276,18 +290,20 @@ class Win32Input(Observable):
         self._reader = threading.Thread(target=self._read, daemon=True)
     
     def _read(self):
-        MAX_RECORDS = 256
+        MAX_RECORDS = 128
         buf = (INPUT_RECORD * MAX_RECORDS)()
         while not self._exit_event.is_set():
-            numRecords = c_dword()
+            numRecords = DWORD()
             windll.kernel32.ReadConsoleInputW(self._stdin, buf, MAX_RECORDS, byref(numRecords))
             for i in range(numRecords.value):
-                etype = buf[i].EventType
-                if etype == KEY_EVENT:
+                e = buf[i].Event
+                t = buf[i].EventType
+                if t == KEY_EVENT:
+                    c = str(e.KeyEvent.uChar.UnicodeChar)
+                    self.emit("key", Key(name=c))
+                if t == MOUSE_EVENT:
                     pass
-                if etype == MOUSE_EVENT:
-                    pass
-                if etype == WINDOW_BUFFER_SIZE_EVENT:
+                if t == WINDOW_BUFFER_SIZE_EVENT:
                     pass
 
     def start(self):
