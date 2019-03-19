@@ -63,6 +63,22 @@ BACKGROUND_GREEN = 32
 BACKGROUND_RED = 64
 BACKGROUND_INTENSITY = 128
 
+ENABLE_ECHO_INPUT = 0x0004
+ENABLE_EXTENDED_FLAGS = 0x0080
+ENABLE_INSERT_MODE = 0x0020
+ENABLE_LINE_INPUT = 0x0002
+ENABLE_MOUSE_INPUT = 0x0010
+ENABLE_PROCESSED_INPUT = 0x0001
+ENABLE_QUICK_EDIT_MODE = 0x0040
+ENABLE_WINDOW_INPUT = 0x0008
+ENABLE_VIRTUAL_TERMINAL_INPUT = 0x0200
+
+ENABLE_PROCESSED_OUTPUT = 0x0001
+ENABLE_WRAP_AT_EOL_OUTPUT = 0x0002
+ENABLE_VIRTUAL_TERMINAL_PROCESSING = 0x0004
+DISABLE_NEWLINE_AUTO_RETURN = 0x0008
+ENABLE_LVB_GRID_WORLDWIDE = 0x001
+
 def color_win32(col, bg):
     bits = color_to_16(col)
     out = 0
@@ -83,7 +99,9 @@ class Win32Backend(Observable):
         super().__init__()
         self._stdout = windll.kernel32.GetStdHandle(STD_OUTPUT_HANDLE)
         self._alt_buffer = None
-        self._active_buffer = self._stdout
+        self._active_buffer = None
+        self._old_mode = None
+        self._activate_buffer(self._stdout)
         
         self._fg = Color.rgb(1,1,1)
         self._bg = Color.rgb(0,0,0)
@@ -157,14 +175,22 @@ class Win32Backend(Observable):
                 None
             )
         windll.kernel32.SetConsoleActiveScreenBuffer(self._alt_buffer)
-        self._active_buffer = self._alt_buffer
+        self._activate_buffer(self._alt_buffer)
     
     def exit_alt_buffer(self):
         windll.kernel32.SetConsoleActiveScreenBuffer(self._stdout)
-        self._active_buffer = self._stdout
+        self._activate_buffer(self._stdout)
     
     def clear_screen(self):
         return NotImplemented
+    
+    def _activate_buffer(self, buf):
+        if self._active_buffer is not None:
+            windll.kernel32.SetConsoleMode(self._active_buffer, self._old_mode)
+        self._old_mode = c_dword()
+        windll.kernel32.GetConsoleMode(buf, byref(self._old_mode))
+        windll.kernel32.SetConsoleMode(buf, ENABLE_PROCESSED_OUTPUT)
+        self._active_buffer = buf
 
     def _update_char_attrs(self):
         attr = 0
