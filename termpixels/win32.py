@@ -63,6 +63,12 @@ class CHAR_INFO(Structure):
         ("Attributes", WORD)
     ]
 
+class CONSOLE_CURSOR_INFO(Structure):
+    _fields_ = [
+        ("dwSize", DWORD),
+        ("bVisible", BOOL)
+    ]
+
 # Misc Windows constants
 INFINITE = 0xFFFFFFFF
 STD_INPUT_HANDLE = DWORD(-10)
@@ -130,6 +136,7 @@ class Win32Backend(Observable):
         self._bg = Color.rgb(0,0,0)
         self.color_mode = "16-color"
         self._cursor_pos = None
+        self._show_cursor = None
         self._attr = WORD(0)
 
         self._termname = "Windows Console"
@@ -186,6 +193,17 @@ class Win32Backend(Observable):
     def cursor_pos(self, pos):
         if self._cursor_pos != pos:
             self._cursor_pos = (pos[0], pos[1])
+    
+    @property
+    def show_cursor(self):
+        return self._show_cursor
+    
+    @show_cursor.setter
+    def show_cursor(self, show_cursor):
+        if self._show_cursor != show_cursor:
+            info = CONSOLE_CURSOR_INFO(100, show_cursor)
+            windll.kernel32.SetConsoleCursorInfo(self._out_buffer, byref(info))
+            self._show_cursor = show_cursor
     
     def _create_buffers(self):
         # clean up old buffer
