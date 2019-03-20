@@ -1,8 +1,26 @@
 from termpixels.detector import detect_backend
 from termpixels.screen import Color
+from random import random
 from time import perf_counter
-ITER = 100
-WARMUP = 20
+from math import floor
+ITER = 50000
+WARMUP = 200
+
+_r_i = 0
+_r_ci = 0
+_r_l = 128
+_r_d = [random() for _ in range(_r_l)]
+_r_cd = [Color.rgb(random(), random(), random()) for _ in range(_r_l)]
+def rand():
+    global _r_i
+    _r_i = (_r_i + 1) % _r_l
+    return _r_d[_r_i]
+def irand(a, b):
+    return floor(rand() * (b - a) + a)
+def crand():
+    global _r_ci
+    _r_ci = (_r_ci + 1) % _r_l
+    return _r_cd[_r_ci]
 
 b = detect_backend()
 b.enter_alt_buffer()
@@ -11,11 +29,9 @@ for i in range(ITER + WARMUP):
     if i < WARMUP:
         t0 = perf_counter()
     size = b.size
-    for x in range(size[0]):
-        for y in range(size[1]):
-            b.cursor_pos = (x, y)
-            b.bg = Color.rgb(x / size[0], y / size[0], 0)
-            b.write(" ")
+    b.cursor_pos = (irand(0, size[0]), irand(0, size[1]))
+    b.bg = crand()
+    b.write(" ")
     b.flush()
 t1 = perf_counter()
 b.exit_alt_buffer()
