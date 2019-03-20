@@ -9,6 +9,7 @@ from termpixels.color import color_to_16
 from termpixels.observable import Observable
 from termpixels.keys import Key, Mouse
 from termpixels.win32_keys import vk_to_name
+from time import sleep
 
 def detect_win10_console():
     """Check whether new console features are supported"""
@@ -63,6 +64,7 @@ class CHAR_INFO(Structure):
     ]
 
 # Misc Windows constants
+INFINITE = 0xFFFFFFFF
 STD_INPUT_HANDLE = DWORD(-10)
 STD_OUTPUT_HANDLE = DWORD(-11)
 STD_ERROR_HANDLE = DWORD(-12)
@@ -323,6 +325,7 @@ class Win32Input(Observable):
         buf = (INPUT_RECORD * MAX_RECORDS)()
         while not self._exit_event.is_set():
             numRecords = DWORD()
+            windll.kernel32.WaitForSingleObject(self._stdin, INFINITE)
             windll.kernel32.ReadConsoleInputW(self._stdin, buf, MAX_RECORDS, byref(numRecords))
             for i in range(numRecords.value):
                 e = buf[i].Event
