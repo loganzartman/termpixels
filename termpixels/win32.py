@@ -27,6 +27,12 @@ UINT = ctypes.c_uint
 BOOL = ctypes.c_int
 
 # Windows structs
+class CharUnion(Union):
+    _fields_ = [
+        ("UnicodeChar", WCHAR),
+        ("AsciiChar", CHAR)
+    ]
+
 class COORD(Structure):
     _fields_ = [
         ("X", ctypes.c_short),
@@ -48,6 +54,12 @@ class CONSOLE_SCREEN_BUFFER_INFO(Structure):
         ("wAttributes", WORD),
         ("srWindow", SMALL_RECT),
         ("dwMaximumWindowSize", COORD)
+    ]
+
+class CHAR_INFO(Structure):
+    _fields_ = [
+        ("Char", CharUnion),
+        ("Attributes", WORD)
     ]
 
 # Misc Windows constants
@@ -104,12 +116,15 @@ def color_win32(col, bg):
 class Win32Backend(Observable):
     def __init__(self):
         super().__init__()
+        # set up buffers
         self._stdout = windll.kernel32.GetStdHandle(STD_OUTPUT_HANDLE)
-        self._alt_buffer = None
-        self._active_buffer = None
-        self._old_mode = None
-        self._activate_buffer(self._stdout)
-        
+        self._front_buffer = None
+        self._back_buffer = None
+        self._char_data = None
+        self._out_buffer = self._stdout
+        windll.kernel32.SetConsoleMode(self._out_buffer, ENABLE_PROCESSED_OUTPUT)
+        self._create_buffers()
+
         self._fg = Color.rgb(1,1,1)
         self._bg = Color.rgb(0,0,0)
         self.color_mode = "16-color"
@@ -127,7 +142,7 @@ class Win32Backend(Observable):
     @property
     def size(self):
         csbi = CONSOLE_SCREEN_BUFFER_INFO()
-        windll.kernel32.GetConsoleScreenBufferInfo(self._active_buffer, byref(csbi))
+        windll.kernel32.GetConsoleScreenBufferInfo(self._out_buffer, byref(csbi))
         w = csbi.srWindow.Right - csbi.srWindow.Left + 1
         h = csbi.srWindow.Bottom - csbi.srWindow.Top + 1
         return (w, h)
@@ -171,32 +186,50 @@ class Win32Backend(Observable):
         if self._cursor_pos != pos:
             self._cursor_pos = (pos[0], pos[1])
     
+    def _create_buffers(self):
+        # clean up old buffers
+        if self._front_buffer:
+            windll.kernel32.CloseHandle(self._front_buffer)
+        if self._back_buffer:
+            windll.kernel32.CloseHandle(self._back_buffer)
+
+        # create new buffers
+        params = [
+            GENERIC_READ | GENERIC_WRITE,
+            FILE_SHARE_READ | FILE_SHARE_WRITE,
+            None,
+            CONSOLE_TEXTMODE_BUFFER,
+            None
+        ]
+        self._front_buffer = windll.kernel32.CreateConsoleScreenBuffer(*params)
+        self._back_buffer = windll.kernel32.CreateConsoleScreenBuffer(*params)
+
+        # change mode of buffers to disable default features (text selection, etc.)
+        mode = ENABLE_PROCESSED_OUTPUT
+        windll.kernel32.SetConsoleMode(self._front_buffer, mode)
+        windll.kernel32.SetConsoleMode(self._back_buffer, mode)
+
+        # create character data buffer
+        self._char_data_size = self.size
+        self._char_data = (CHAR_INFO * (self._char_data_size[0] * self._char_data_size[1]))()
+    
+    def _swap_buffers(self):
+        """Activate the back buffer and swap it with the front buffer."""
+        assert(self._out_buffer is not self._stdout)
+        windll.kernel32.SetConsoleActiveScreenBuffer(self._back_buffer)
+        self._back_buffer, self._front_buffer = self._front_buffer, self._back_buffer
+        self._out_buffer = self._back_buffer
+    
     def enter_alt_buffer(self):
-        if not self._alt_buffer:
-            self._alt_buffer = windll.kernel32.CreateConsoleScreenBuffer(
-                GENERIC_READ | GENERIC_WRITE,
-                FILE_SHARE_READ | FILE_SHARE_WRITE,
-                None, 
-                CONSOLE_TEXTMODE_BUFFER, 
-                None
-            )
-        windll.kernel32.SetConsoleActiveScreenBuffer(self._alt_buffer)
-        self._activate_buffer(self._alt_buffer)
+        windll.kernel32.SetConsoleActiveScreenBuffer(self._front_buffer)
+        self._out_buffer = self._back_buffer
     
     def exit_alt_buffer(self):
         windll.kernel32.SetConsoleActiveScreenBuffer(self._stdout)
-        self._activate_buffer(self._stdout)
+        self._out_buffer = self._stdout
     
     def clear_screen(self):
         return NotImplemented
-    
-    def _activate_buffer(self, buf):
-        if self._active_buffer is not None:
-            windll.kernel32.SetConsoleMode(self._active_buffer, self._old_mode)
-        self._old_mode = DWORD()
-        windll.kernel32.GetConsoleMode(buf, byref(self._old_mode))
-        windll.kernel32.SetConsoleMode(buf, ENABLE_PROCESSED_OUTPUT)
-        self._active_buffer = buf
 
     def _update_char_attrs(self):
         attr = 0
@@ -207,25 +240,24 @@ class Win32Backend(Observable):
     def write(self, text):
         n_written = DWORD()
         x, y = self._cursor_pos
-        windll.kernel32.FillConsoleOutputAttribute(
-            self._active_buffer,
-            self._attr,
-            len(text),
-            COORD(X=x, Y=y),
-            byref(n_written)
-        )
-        windll.kernel32.WriteConsoleOutputCharacterW(
-            self._active_buffer,
-            text,
-            len(text),
-            COORD(X=x, Y=y),
-            byref(n_written)
-        )
+        idx = y * self._char_data_size[0] + x
+        self._char_data[idx].Char.UnicodeChar = ord(text[0])
+        self._char_data[idx].Attributes = self._attr
         self._cursor_pos = (self._cursor_pos[0] + len(text), self._cursor_pos[1])
     
     def flush(self):
-        # TODO: create alternate screen buffer in init; swap buffers here
-        pass
+        # copy character data to active screen buffer
+        lpWriteRegion = SMALL_RECT(0, 0, *self._char_data_size)
+        windll.kernel32.WriteConsoleOutputW(
+            self._out_buffer,
+            self._char_data,
+            COORD(*self._char_data_size),
+            COORD(0, 0),
+            byref(lpWriteRegion)
+        )
+        if self._out_buffer is not self._stdout:
+            # double buffering (alternate buffer) enabled
+            self._swap_buffers()
 
 
 FOCUS_EVENT = 0x0010
@@ -245,19 +277,13 @@ MOUSE_HWHEELED = 0x0008
 MOUSE_MOVED = 0x0001
 MOUSE_WHEELED = 0x0004
 
-class KeyEventRecordChar(Union):
-    _fields_ = [
-        ("UnicodeChar", WCHAR),
-        ("AsciiChar", CHAR)
-    ]
-
 class KEY_EVENT_RECORD(Structure):
     _fields_ = [
         ("bKeyDown", BOOL),
         ("wRepeatCount", WORD),
         ("wVirtualKeyCode", WORD),
         ("wVirtualScanCode", WORD),
-        ("uChar", KeyEventRecordChar),
+        ("uChar", CharUnion),
         ("dwControlKeyState", DWORD)
     ]
 

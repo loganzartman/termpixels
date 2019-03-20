@@ -41,6 +41,10 @@ class DemoApp(App):
         self.screen.print(repr(self.key), x, y, fg=white)
         y += 1
 
+        x, _ = self.screen.print("Last render time: ", 2, y, fg=gray)
+        self.screen.print("{0:.3f}s".format(self.screen._update_duration), x, y, fg=white)
+        y += 1
+
         if self.mouse:
             self.screen.print(" ", self.mouse.x, self.mouse.y, bg=white)
         self.screen.update()
