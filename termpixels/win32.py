@@ -118,7 +118,6 @@ class Win32Backend(Observable):
         super().__init__()
         # set up buffers
         self._stdout = windll.kernel32.GetStdHandle(STD_OUTPUT_HANDLE)
-        self._front_buffer = None
         self._back_buffer = None
         self._char_data = None
         self._out_buffer = self._stdout
@@ -187,41 +186,28 @@ class Win32Backend(Observable):
             self._cursor_pos = (pos[0], pos[1])
     
     def _create_buffers(self):
-        # clean up old buffers
-        if self._front_buffer:
-            windll.kernel32.CloseHandle(self._front_buffer)
+        # clean up old buffer
         if self._back_buffer:
             windll.kernel32.CloseHandle(self._back_buffer)
 
-        # create new buffers
-        params = [
+        # create alt buffer
+        self._back_buffer = windll.kernel32.CreateConsoleScreenBuffer(
             GENERIC_READ | GENERIC_WRITE,
             FILE_SHARE_READ | FILE_SHARE_WRITE,
             None,
             CONSOLE_TEXTMODE_BUFFER,
             None
-        ]
-        self._front_buffer = windll.kernel32.CreateConsoleScreenBuffer(*params)
-        self._back_buffer = windll.kernel32.CreateConsoleScreenBuffer(*params)
+        )
 
-        # change mode of buffers to disable default features (text selection, etc.)
-        mode = ENABLE_PROCESSED_OUTPUT
-        windll.kernel32.SetConsoleMode(self._front_buffer, mode)
-        windll.kernel32.SetConsoleMode(self._back_buffer, mode)
+        # change mode of buffer to disable default features (text selection, etc.)
+        windll.kernel32.SetConsoleMode(self._back_buffer, ENABLE_PROCESSED_OUTPUT)
 
         # create character data buffer
         self._char_data_size = self.size
         self._char_data = (CHAR_INFO * (self._char_data_size[0] * self._char_data_size[1]))()
     
-    def _swap_buffers(self):
-        """Activate the back buffer and swap it with the front buffer."""
-        assert(self._out_buffer is not self._stdout)
-        windll.kernel32.SetConsoleActiveScreenBuffer(self._back_buffer)
-        self._back_buffer, self._front_buffer = self._front_buffer, self._back_buffer
-        self._out_buffer = self._back_buffer
-    
     def enter_alt_buffer(self):
-        windll.kernel32.SetConsoleActiveScreenBuffer(self._front_buffer)
+        windll.kernel32.SetConsoleActiveScreenBuffer(self._back_buffer)
         self._out_buffer = self._back_buffer
     
     def exit_alt_buffer(self):
@@ -255,9 +241,6 @@ class Win32Backend(Observable):
             COORD(0, 0),
             byref(lpWriteRegion)
         )
-        if self._out_buffer is not self._stdout:
-            # double buffering (alternate buffer) enabled
-            self._swap_buffers()
 
 
 FOCUS_EVENT = 0x0010
