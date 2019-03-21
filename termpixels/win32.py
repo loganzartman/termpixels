@@ -373,16 +373,16 @@ class Win32Input(Observable):
                     char = e.KeyEvent.uChar.UnicodeChar
                     code = e.KeyEvent.wVirtualKeyCode
                     if e.KeyEvent.bKeyDown:
-                        if char != 0:
-                            key = Key(char=chr(char))
-                            self.emit("raw_input", chr(char))
+                        self.emit("raw_input", code)
+                        name = vk_to_name(code)
+                        if name is not None:
+                            key = Key(name=name)
+                            if char != 0:
+                                key.char = char
                             self.emit("key", key)
-                        else:
-                            self.emit("raw_input", code)
-                            name = vk_to_name(code)
-                            if name is not None:
-                                key = Key(name=name)
-                                self.emit("key", key)
+                        elif char != 0:
+                            key = Key(char=chr(char))
+                            self.emit("key", key)
                 if t == MOUSE_EVENT:
                     pos = e.MouseEvent.dwMousePosition
                     
