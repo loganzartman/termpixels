@@ -196,7 +196,10 @@ class Win32Backend(Observable):
         self._char_data = None
         self._out_buffer = self._stdout
         windll.kernel32.SetConsoleMode(self._out_buffer, ENABLE_PROCESSED_OUTPUT)
-        self._create_buffers()
+
+        self.size_dirty = True
+        self._size = None
+        self.update_size()
 
         self._fg = Color.rgb(1,1,1)
         self._bg = Color.rgb(0,0,0)
@@ -215,11 +218,19 @@ class Win32Backend(Observable):
     
     @property
     def size(self):
+        if self.size_dirty:
+            self.update_size()
+        return self._size
+    
+    def update_size(self):
         csbi = CONSOLE_SCREEN_BUFFER_INFO()
         windll.kernel32.GetConsoleScreenBufferInfo(self._out_buffer, byref(csbi))
         w = csbi.srWindow.Right - csbi.srWindow.Left + 1
         h = csbi.srWindow.Bottom - csbi.srWindow.Top + 1
-        return (w, h)
+        self.size_dirty = False
+        if self._size != (w, h):
+            self._size = (w, h)
+            self._create_buffers()
 
     @property
     def fg(self):
@@ -273,8 +284,8 @@ class Win32Backend(Observable):
     
     def _create_buffers(self):
         # clean up old buffer
-        if self._back_buffer:
-            windll.kernel32.CloseHandle(self._back_buffer)
+        reenter_alt_buffer = self._out_buffer == self._back_buffer 
+        old_buffer = self._back_buffer
 
         # create alt buffer
         self._back_buffer = windll.kernel32.CreateConsoleScreenBuffer(
@@ -291,6 +302,10 @@ class Win32Backend(Observable):
         # create character data buffer
         self._char_data_size = self.size
         self._char_data = (CHAR_INFO * (self._char_data_size[0] * self._char_data_size[1]))()
+        if reenter_alt_buffer:
+            self.enter_alt_buffer()
+        if old_buffer:
+            windll.kernel32.CloseHandle(old_buffer)
     
     def enter_alt_buffer(self):
         windll.kernel32.SetConsoleActiveScreenBuffer(self._back_buffer)
@@ -388,7 +403,7 @@ class Win32Input(Observable):
                     mouse = Mouse(x=pos.X, y=pos.Y, button=button, action=action)
                     self.emit("mouse", mouse)
                 if t == WINDOW_BUFFER_SIZE_EVENT:
-                    pass
+                    self.emit("resize")
 
     def start(self):
         self._old_cp = windll.kernel32.GetConsoleCP()
