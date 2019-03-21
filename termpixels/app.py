@@ -11,8 +11,11 @@ class App:
         self.input = detect_input()
         self.input.listen("key", lambda d: self.on_key(d))
         self.input.listen("mouse", lambda d: self.on_mouse(d))
-        self.screen = Screen(self.backend)
-        self.backend.listen("resize", lambda _: self.on_resize())
+        def handle_resize(_):
+            self.backend.size_dirty = True
+            self.on_resize()
+        self.input.listen("resize", handle_resize)
+        self.screen = Screen(self.backend, self.input)
         self._framerate = framerate
     
     def start(self):

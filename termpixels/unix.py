@@ -49,24 +49,9 @@ class UnixBackend(Observable):
         self._bg = None
         self._show_cursor = None
         self._mouse_tracking = None
-        self._size_dirty = True 
+        self.size_dirty = True 
         self._size = None
         self._window_title = None
-
-        self._sigwinch_event = threading.Event()
-        self._sigwinch_consumer = threading.Thread(target=self.watch_sigwinch, daemon=True)
-        self._sigwinch_consumer.start()
-        signal.signal(signal.SIGWINCH, self.handle_sigwinch)
-    
-    def handle_sigwinch(self, signum, frame):
-        self._sigwinch_event.set()
-    
-    def watch_sigwinch(self):
-        while True:
-            self._sigwinch_event.wait()
-            self._sigwinch_event.clear()
-            self._size_dirty = True
-            self.emit("resize")
 
     @property
     def terminal_name(self):
@@ -74,7 +59,7 @@ class UnixBackend(Observable):
     
     @property
     def size(self):
-        if self._size_dirty:
+        if self.size_dirty:
             self.update_size()
         return self._size
     
@@ -82,7 +67,7 @@ class UnixBackend(Observable):
         result = fcntl.ioctl(sys.stdout, termios.TIOCGWINSZ, struct.pack("HHHH", 0, 0, 0, 0))
         r, c, _, _ = struct.unpack("HHHH", result)
         self._size = (c, r) 
-        self._size_dirty = False
+        self.size_dirty = False
     
     @property
     def cursor_pos(self):
@@ -210,6 +195,19 @@ class UnixInput(Observable):
         self._collector = threading.Thread(target=self.collector_func, daemon=True)
         self._grouper = threading.Thread(target=self.grouper_func, daemon=True)
 
+        self._sigwinch_event = threading.Event()
+        self._sigwinch_consumer = threading.Thread(target=self.watch_sigwinch, daemon=True)
+        signal.signal(signal.SIGWINCH, self.handle_sigwinch)
+    
+    def handle_sigwinch(self, signum, frame):
+        self._sigwinch_event.set()
+    
+    def watch_sigwinch(self):
+        while not self._exited_event.is_set():
+            self._sigwinch_event.wait()
+            self._sigwinch_event.clear()
+            self.emit("resize")
+
     @property
     def cbreak(self):
         return self._cbreak
@@ -273,6 +271,7 @@ class UnixInput(Observable):
         self.set_cbreak(True)
         self._collector.start()
         self._grouper.start()
+        self._sigwinch_consumer.start()
 
     def stop(self):
         self.set_cbreak(False)

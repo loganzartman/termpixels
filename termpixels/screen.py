@@ -109,7 +109,7 @@ class Color:
         return Color.rgb(*colorsys.hls_to_rgb(h, l, s))
 
 class Screen:
-    def __init__(self, backend):
+    def __init__(self, backend, input):
         self.lock = Lock()
         self.backend = backend
         self.cursor_pos = (0, 0)
@@ -117,7 +117,7 @@ class Screen:
         self._h = 0
         self._pixels = []
         self.resize(backend.size[0], backend.size[1])
-        self.backend.listen("resize", lambda size: self.resize(backend.size[0], backend.size[1]))
+        input.listen("resize", lambda _: self.resize(backend.size[0], backend.size[1]))    
         self.show_cursor = False 
     
     @property
