@@ -106,6 +106,72 @@ ENABLE_VIRTUAL_TERMINAL_PROCESSING = 0x0004
 DISABLE_NEWLINE_AUTO_RETURN = 0x0008
 ENABLE_LVB_GRID_WORLDWIDE = 0x001
 
+# Input structures and constants
+FOCUS_EVENT = 0x0010
+KEY_EVENT = 0x0001
+MENU_EVENT = 0x0008
+MOUSE_EVENT = 0x0002
+WINDOW_BUFFER_SIZE_EVENT = 0x0004
+
+FROM_LEFT_1ST_BUTTON_PRESSED = 0x0001
+FROM_LEFT_2ND_BUTTON_PRESSED = 0x0004
+FROM_LEFT_3RD_BUTTON_PRESSED = 0x0008
+FROM_LEFT_4TH_BUTTON_PRESSED = 0x0010
+RIGHTMOST_BUTTON_PRESSED = 0x0002
+
+DOUBLE_CLICK = 0x0002
+MOUSE_HWHEELED = 0x0008
+MOUSE_MOVED = 0x0001
+MOUSE_WHEELED = 0x0004
+
+class KEY_EVENT_RECORD(Structure):
+    _fields_ = [
+        ("bKeyDown", BOOL),
+        ("wRepeatCount", WORD),
+        ("wVirtualKeyCode", WORD),
+        ("wVirtualScanCode", WORD),
+        ("uChar", CharUnion),
+        ("dwControlKeyState", DWORD)
+    ]
+
+class MOUSE_EVENT_RECORD(Structure):
+    _fields_ = [
+        ("dwMousePosition", COORD),
+        ("dwButtonState", DWORD),
+        ("dwControlKeyState", DWORD),
+        ("dwEventFlags", DWORD)
+    ]
+
+class WINDOW_BUFFER_SIZE_RECORD(Structure):
+    _fields_ = [
+        ("dwSize", COORD)
+    ]
+
+class MENU_EVENT_RECORD(Structure):
+    _fields_ = [
+        ("dwCommandId", UINT)
+    ]
+
+class FOCUS_EVENT_RECORD(Structure):
+    _fields_ = [
+        ("bSetFocus", BOOL)
+    ]
+
+class InputRecordEvent(Union):
+    _fields_ = [
+        ("KeyEvent", KEY_EVENT_RECORD),
+        ("MouseEvent", MOUSE_EVENT_RECORD),
+        ("WindowBufferSizeEvent", WINDOW_BUFFER_SIZE_RECORD),
+        ("MenuEvent", MENU_EVENT_RECORD),
+        ("FocusEvent", FOCUS_EVENT_RECORD)
+    ]
+
+class INPUT_RECORD(Structure):
+    _fields_ = [
+        ("EventType", WORD),
+        ("Event", InputRecordEvent)
+    ]
+
 def color_win32(col, bg):
     bits = color_to_16(col)
     out = 0
@@ -263,70 +329,7 @@ class Win32Backend(Observable):
         )
 
 
-FOCUS_EVENT = 0x0010
-KEY_EVENT = 0x0001
-MENU_EVENT = 0x0008
-MOUSE_EVENT = 0x0002
-WINDOW_BUFFER_SIZE_EVENT = 0x0004
 
-FROM_LEFT_1ST_BUTTON_PRESSED = 0x0001
-FROM_LEFT_2ND_BUTTON_PRESSED = 0x0004
-FROM_LEFT_3RD_BUTTON_PRESSED = 0x0008
-FROM_LEFT_4TH_BUTTON_PRESSED = 0x0010
-RIGHTMOST_BUTTON_PRESSED = 0x0002
-
-DOUBLE_CLICK = 0x0002
-MOUSE_HWHEELED = 0x0008
-MOUSE_MOVED = 0x0001
-MOUSE_WHEELED = 0x0004
-
-class KEY_EVENT_RECORD(Structure):
-    _fields_ = [
-        ("bKeyDown", BOOL),
-        ("wRepeatCount", WORD),
-        ("wVirtualKeyCode", WORD),
-        ("wVirtualScanCode", WORD),
-        ("uChar", CharUnion),
-        ("dwControlKeyState", DWORD)
-    ]
-
-class MOUSE_EVENT_RECORD(Structure):
-    _fields_ = [
-        ("dwMousePosition", COORD),
-        ("dwButtonState", DWORD),
-        ("dwControlKeyState", DWORD),
-        ("dwEventFlags", DWORD)
-    ]
-
-class WINDOW_BUFFER_SIZE_RECORD(Structure):
-    _fields_ = [
-        ("dwSize", COORD)
-    ]
-
-class MENU_EVENT_RECORD(Structure):
-    _fields_ = [
-        ("dwCommandId", UINT)
-    ]
-
-class FOCUS_EVENT_RECORD(Structure):
-    _fields_ = [
-        ("bSetFocus", BOOL)
-    ]
-
-class InputRecordEvent(Union):
-    _fields_ = [
-        ("KeyEvent", KEY_EVENT_RECORD),
-        ("MouseEvent", MOUSE_EVENT_RECORD),
-        ("WindowBufferSizeEvent", WINDOW_BUFFER_SIZE_RECORD),
-        ("MenuEvent", MENU_EVENT_RECORD),
-        ("FocusEvent", FOCUS_EVENT_RECORD)
-    ]
-
-class INPUT_RECORD(Structure):
-    _fields_ = [
-        ("EventType", WORD),
-        ("Event", InputRecordEvent)
-    ]
 
 class Win32Input(Observable):
     def __init__(self):
