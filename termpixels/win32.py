@@ -342,8 +342,11 @@ class Win32Backend(Observable):
             COORD(0, 0),
             byref(lpWriteRegion)
         )
-
-
+        # position cursor for aesthetic purposes
+        windll.kernel32.SetConsoleCursorPosition(
+            self._out_buffer,
+            COORD(self._cursor_pos[0], self._cursor_pos[1])
+        )
 
 
 class Win32Input(Observable):
