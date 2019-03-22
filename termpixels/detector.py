@@ -1,4 +1,5 @@
 def detect_backend():
+    """Try to construct an appropriate backend for this platform."""
     try:
         from termpixels.unix import UnixBackend
         return UnixBackend()
@@ -7,6 +8,7 @@ def detect_backend():
         return Win32Backend()
 
 def detect_input():
+    """Try to construct an appropriate input implementation for this platform."""
     try:
         from termpixels.unix import UnixInput
         return UnixInput()
