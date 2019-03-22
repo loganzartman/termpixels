@@ -1,5 +1,5 @@
 from termpixels.app import App
-from termpixels.screen import Color
+from termpixels.color import Color
 import time
 
 class TestWindowTitleApp(App):

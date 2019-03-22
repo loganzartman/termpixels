@@ -1,5 +1,5 @@
 from time import sleep
-from termpixels.screen import Color
+from termpixels.color import Color
 from termpixels.app import App
 
 class ColorTest(App):

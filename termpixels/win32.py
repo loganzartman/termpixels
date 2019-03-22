@@ -4,7 +4,7 @@ import threading
 from ctypes import windll
 from ctypes import byref
 from ctypes import Structure, Union
-from termpixels.screen import Color
+from termpixels.color import Color
 from termpixels.color import color_to_16
 from termpixels.observable import Observable
 from termpixels.keys import Key, Mouse

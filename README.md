@@ -16,7 +16,7 @@ There are lots of great libraries for coloring terminal output. This one is desi
 ![Demo gif](fun-text.gif)
 ```python
 from termpixels.app import App
-from termpixels.screen import Color
+from termpixels.color import Color
 from time import time
 from math import sin
 

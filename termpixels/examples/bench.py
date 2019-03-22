@@ -1,5 +1,5 @@
 from termpixels.detector import detect_backend
-from termpixels.screen import Color
+from termpixels.color import Color
 from random import random
 from time import perf_counter
 from math import floor
