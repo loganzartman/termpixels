@@ -1,7 +1,16 @@
 import colorsys
 
 class Color:
+    """Represents an immutable 24-bit RGB color"""
+
     def __init__(self, *args):
+        """Construct a Color from one of several formats:
+        
+        Color(color) - copy constructor
+        Color(R,G,B) - three integers in the range [0,255]
+        Color(RGB) - one integer in the format 0xRRGGBB
+        Color((r,g,b)) - an iterable of three floats in the range [0,1]
+        """
         r = 0
         g = 0
         b = 0
@@ -9,18 +18,23 @@ class Color:
         if len(args) == 3:
             r, g, b = args
         elif len(args) == 1:
-            try:
-                c = Color.unpack(args[0])
-                r = c.r
-                g = c.g
-                b = c.b
-            except:
+            if isinstance(args[0], Color):
+                r = args[0].r
+                g = args[0].g
+                b = args[0].b 
+            else:
                 try:
-                    r = args[0][0] * 255
-                    g = args[0][1] * 255
-                    b = args[0][2] * 255
+                    c = Color.unpack(args[0])
+                    r = c.r
+                    g = c.g
+                    b = c.b
                 except:
-                    raise Exception("Invalid single argument constructor for Color: {}".format(args[0]))
+                    try:
+                        r = args[0][0] * 255
+                        g = args[0][1] * 255
+                        b = args[0][2] * 255
+                    except:
+                        raise Exception("Invalid single argument constructor for Color: {}".format(args[0]))
         else:
             raise Exception("Invalid constructor for Color: {}".format(args))
 
@@ -32,14 +46,17 @@ class Color:
     
     @property
     def r(self):
+        """The red component as an integer in the range [0,255]"""
         return self._r
     
     @property
     def g(self):
+        """The green component as an integer in the range [0,255]"""
         return self._g
     
     @property
     def b(self):
+        """The blue component as an integer in the range [0,255]"""
         return self._b
 
     def __eq__(self, other):
@@ -90,19 +107,23 @@ class Color:
 
     @staticmethod  
     def pack(col):
+        """Produce a "packed" color in the format 0xRRGGBB"""
         return (col.r << 16) | (col.g << 8) | (col.b)
     
     @staticmethod
     def unpack(val):
+        """Unpack an integer in the format 0xRRGGBB into a Color instance"""
         return Color(val >> 16, (val >> 8) & 0xFF, val & 0xFF)
     
     @staticmethod
     def rgb(r, g, b):
+        """Construct a Color from RGB values in the range [0,1]"""
         scale = lambda c: int(max(0, min(1, c)) * 255)
         return Color(scale(r), scale(g), scale(b))
     
     @staticmethod
     def hsl(h, s, l):
+        """Construct a Color from HSL values in the range [0,1]"""
         return Color.rgb(*colorsys.hls_to_rgb(h, l, s))
 
 
