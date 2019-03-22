@@ -1,4 +1,14 @@
 class Key:
+    """Represents a key press event.
+
+    A key can have a printable "char" or a made-up "name", or both. As an 
+    example, the "A" key has char="a", or char="A" if it is typed in uppercase.
+    The left arrow key, which does not have a corresponding Unicode character,
+    has name="left" but no value for char.
+
+    The __eq__ implementation for Key will check for equality with either char
+    or name if you test a Key instance against a string.
+    """
     def __init__(self, *, char=None, name=None):
         self.char = char
         self.name = name
@@ -22,6 +32,17 @@ class Key:
             return False
 
 class Mouse:
+    """Represents a mouse event.
+
+    There are several kinds of mouse events. All of them have an associated
+    position, indicated by the `x` and `y` properties. 
+    
+    Each event has an `action`, which can be either "moved", "down", or "up". 
+    
+    If the action is "down" or "up", or if the mouse is being dragged during a 
+    "moved", then a `button` will be indicated by name. The possible `button` 
+    values are "left", "middle", "right", "scrollup", and "scrolldown".
+    """
     def __init__(self, x, y, *, button=None, action=None):
         self.x = x
         self.y = y
