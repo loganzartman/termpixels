@@ -1,5 +1,4 @@
-from termpixels.app import App
-from termpixels.color import Color
+from termpixels import App, Color
 from time import time
 from math import sin
 

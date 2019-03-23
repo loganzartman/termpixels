@@ -1,4 +1,4 @@
-from termpixels.app import App
+from termpixels import App, Color
 
 class InputTestApp(App):
     def __init__(self):

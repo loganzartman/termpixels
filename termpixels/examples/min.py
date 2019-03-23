@@ -1,4 +1,4 @@
-from termpixels.color import Color
+from termpixels import Color
 from termpixels.detector import detect_backend
 from time import sleep
 

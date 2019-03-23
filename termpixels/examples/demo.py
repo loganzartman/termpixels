@@ -1,6 +1,5 @@
 import termpixels
-from termpixels.app import App
-from termpixels.color import Color
+from termpixels import App, Color
 import os
 
 class DemoApp(App):

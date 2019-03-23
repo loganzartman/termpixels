@@ -1,6 +1,5 @@
 from time import sleep
-from termpixels.color import Color
-from termpixels.app import App
+from termpixels import App, Color
 
 class ColorTest(App):
     def __init__(self):
