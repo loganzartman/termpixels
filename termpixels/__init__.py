@@ -4,4 +4,4 @@ from termpixels.keys import Key, Mouse
 from termpixels.screen import Screen
 
 name = "termpixels"
-__version__ = "0.0.4"
+__version__ = "0.0.5"
