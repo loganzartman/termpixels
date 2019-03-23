@@ -60,9 +60,10 @@ if __name__ == "__main__":
 ## Inspiration
 * [tcell][tcell]
 * [ncurses][ncurses]
+* [Build your own Command Line][byocl]
 
 [python-curses]: https://docs.python.org/3/howto/curses.html
 [tcell]: https://github.com/gdamore/tcell
 [ncurses]: https://www.gnu.org/software/ncurses/
 [pypi]: https://pypi.org/project/termpixels/
-
+[byocl]: http://www.lihaoyi.com/post/BuildyourownCommandLinewithANSIescapecodes.html
