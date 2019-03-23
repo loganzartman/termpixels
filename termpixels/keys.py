@@ -1,5 +1,5 @@
 class Key:
-    """Represents a key press event.
+    r"""Represents a key press event.
 
     A key can have a printable "char" or a made-up "name", or both. As an 
     example, the "A" key has char="a", or char="A" if it is typed in uppercase.
@@ -8,6 +8,28 @@ class Key:
 
     The __eq__ implementation for Key will check for equality with either char
     or name if you test a Key instance against a string.
+
+    The termpixels names for special keys are as follows:
+        backtab - Unix only for now; shift+tab
+        backspace - also has char="\b"
+        escape
+        tab - also has char="\t"
+        
+        delete
+        end
+        home
+        insert
+        pageup - page up (AKA VK_PRIOR)
+        pagedown - page down (AKA VK_NEXT)
+
+        f1 - includes f1 through f64 (wow!), the function keys
+
+        down - down arrow key
+        left - left arrow key
+        right - right arrow key
+        up - up arrow key
+    
+    Termpixels does not yet support modifiers.
     """
     def __init__(self, *, char=None, name=None):
         self.char = char
@@ -20,7 +42,7 @@ class Key:
     
     def __repr__(self):
         param_names = ["char", "name"]
-        params = ["{}=\"{}\"".format(name, getattr(self, name)) for name in param_names if getattr(self, name)]
+        params = ["{}={}".format(name, repr(getattr(self, name))) for name in param_names if getattr(self, name)]
         return "Key({})".format(", ".join(params))
     
     def __eq__(self, other):

@@ -88,8 +88,8 @@ def make_key_parser(ti):
             parser.register_key(seq.decode("ascii"), Key(name=name))
     
     # terminfo files seem to have bad backspace (kbs) values; just register both
-    parser.register_key(chr(8), Key(name="backspace"))
-    parser.register_key(chr(127), Key(name="backspace"))
+    parser.register_key(chr(8), Key(name="backspace", char="\b"))
+    parser.register_key(chr(127), Key(name="backspace", char="\b"))
 
     parser.register_key("\t", Key(name="tab", char="\t"))
 

@@ -8,7 +8,7 @@ from termpixels.color import Color
 from termpixels.color import color_to_16
 from termpixels.observable import Observable
 from termpixels.keys import Key, Mouse
-from termpixels.win32_keys import vk_to_name
+from termpixels.win32_keys import vk_to_key
 from time import sleep
 
 def detect_win10_console():
@@ -374,15 +374,11 @@ class Win32Input(Observable):
                     code = e.KeyEvent.wVirtualKeyCode
                     if e.KeyEvent.bKeyDown:
                         self.emit("raw_input", code)
-                        name = vk_to_name(code)
-                        if name is not None:
-                            key = Key(name=name)
-                            if char != 0:
-                                key.char = char
+                        key = vk_to_key(code)
+                        if key is not None:
                             self.emit("key", key)
                         elif char != 0:
-                            key = Key(char=chr(char))
-                            self.emit("key", key)
+                            self.emit("key", Key(char=char))
                 if t == MOUSE_EVENT:
                     pos = e.MouseEvent.dwMousePosition
                     

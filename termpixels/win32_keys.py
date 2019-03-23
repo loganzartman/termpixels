@@ -1,3 +1,5 @@
+from termpixels.keys import Key
+
 # All Windows VK constants (some unused)
 VK_LBUTTON = 0x01
 VK_RBUTTON = 0x02
@@ -150,25 +152,27 @@ VK_PA1 = 0xFD
 
 # VK to termpixels name mapping
 KEY_MAP = {
-    VK_LEFT: "left",
-    VK_RIGHT: "right",
-    VK_UP: "up",
-    VK_DOWN: "down",
+    VK_LEFT: {"name": "left"},
+    VK_RIGHT: {"name": "right"},
+    VK_UP: {"name": "up"},
+    VK_DOWN: {"name": "down"},
 
-    VK_HOME: "home",
-    VK_END: "end",
-    VK_PRIOR: "pageup",
-    VK_NEXT: "pagedown",
-    VK_INSERT: "insert",
-    VK_DELETE: "delete",
+    VK_HOME: {"name": "home"},
+    VK_END: {"name": "end"},
+    VK_PRIOR: {"name": "pageup"},
+    VK_NEXT: {"name": "pagedown"},
+    VK_INSERT: {"name": "insert"},
+    VK_DELETE: {"name": "delete"},
 
-    VK_BACK: "backspace"
+    VK_TAB: {"name": "tab", "char": "\t"},
+    VK_BACK: {"name": "backspace", "char": "\b"},
+    VK_ESCAPE: {"name": "escape"},
 }
 for i in range(24):
     KEY_MAP[VK_F1 + i] = "f{}".format(i + 1)
 
-def vk_to_name(code):
-    """Convert a Windows virtual key code to a termpixels key name."""
+def vk_to_key(code):
+    """Convert a Windows virtual key code to a termpixels Key."""
     if code not in KEY_MAP:
         return None
-    return KEY_MAP[code]
+    return Key(*KEY_MAP[code])
