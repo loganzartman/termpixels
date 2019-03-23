@@ -6,6 +6,8 @@ import os
 class DemoApp(App):
     def __init__(self):
         super().__init__(mouse=True)
+    
+    def on_start(self):
         self.mouse = None
         self.key = None
         self.dirty = False

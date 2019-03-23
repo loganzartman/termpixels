@@ -6,12 +6,14 @@ from termpixels.color import Color
 class ParticleApp(App):
     def __init__(self):
         super().__init__(mouse=True, framerate=60)
+    
+    def on_start(self):
         self.mouse_x = 0
         self.mouse_y = 0
         self.mouse_px = 0
         self.mouse_py = 0
         self.particles = []
-    
+
     def on_mouse(self, m):
         self.mouse_x = m.x
         self.mouse_y = m.y

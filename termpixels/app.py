@@ -30,10 +30,15 @@ from termpixels.detector import detect_backend, detect_input
 
 class App:
     def __init__(self, *, mouse=False, framerate=30):
+        """Initialize the application.
+
+        The constructor may be overridden in subclasses to perform one-time
+        initialization routines, like creating event listeners. Most start-up 
+        code should be placed in the on_frame() method, as it will be called
+        each time the app starts (if it starts more than once), and the 
+        terminal will be fully configured and ready for use.
+        """
         self.backend = detect_backend()
-        self.backend.enter_alt_buffer()
-        self.backend.application_keypad = True
-        self.backend.mouse_tracking = mouse
         self.input = detect_input()
         self.input.listen("key", lambda d: self.on_key(d))
         self.input.listen("mouse", lambda d: self.on_mouse(d))
@@ -41,19 +46,29 @@ class App:
             self.backend.size_dirty = True
             self.on_resize()
         self.input.listen("resize", handle_resize)
-        self.screen = Screen(self.backend, self.input)
         self._framerate = framerate
-    
+        self._mouse = mouse
+        self._stopping = False
+
     def start(self):
         """Start collecting input and run the App's main loop.
         
         Starts the application and begins calling the on_frame() method at the
         framerate specified in the constructor.
         """
-        self.backend.clear_screen()
-        self.input.start()
         try:
-            while True:
+            self._stopping = False
+            self.backend.enter_alt_buffer()
+            # screen needs to be initialized with alternate buffer active or
+            # it will destroy user's screen contents
+            self.screen = Screen(self.backend, self.input)
+            self.backend.clear_screen()
+            self.backend.application_keypad = True
+            if self._mouse:
+                self.backend.mouse_tracking = True
+            self.input.start()
+            self.on_start()
+            while not self._stopping:
                 t0 = perf_counter()
                 self.on_frame()
                 dt = perf_counter() - t0
@@ -61,13 +76,36 @@ class App:
         except KeyboardInterrupt:
             pass
         finally:
+            self.on_stop()
             self.backend.application_keypad = False
             self.backend.mouse_tracking = False
             self.input.stop()
             self.screen.show_cursor = True
             self.screen.update()
             self.backend.exit_alt_buffer()
+
+    def stop(self):
+        """Tell the application to stop running gracefully."""
+        self._stopping = True
     
+    def on_start(self):
+        """Handle the application starting.
+
+        This should be overridden in applications that want to implement logic
+        that occurs as soon as start() has been called and the terminal has 
+        been properly configured.
+        """
+        pass
+    
+    def on_stop(self):
+        """Handle the application stopping.
+
+        This should be overridden in applications that want to implement logic
+        that occurs when the application exits for any reason, before the 
+        terminal has been reset to its original state.
+        """
+        pass
+
     def on_key(self, data):
         """Handle a key press event.
         
