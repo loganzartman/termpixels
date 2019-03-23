@@ -175,4 +175,4 @@ def vk_to_key(code):
     """Convert a Windows virtual key code to a termpixels Key."""
     if code not in KEY_MAP:
         return None
-    return Key(*KEY_MAP[code])
+    return Key(**KEY_MAP[code])

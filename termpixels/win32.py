@@ -378,7 +378,7 @@ class Win32Input(Observable):
                         if key is not None:
                             self.emit("key", key)
                         elif char != 0:
-                            self.emit("key", Key(char=char))
+                            self.emit("key", Key(char=chr(char)))
                 if t == MOUSE_EVENT:
                     pos = e.MouseEvent.dwMousePosition
                     
