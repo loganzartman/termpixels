@@ -1,7 +1,14 @@
 import colorsys
+from functools import lru_cache
 
 class Color:
-    """Represents an immutable 24-bit RGB color"""
+    """Represents an immutable 24-bit RGB color
+    
+    Since Colors are immutable, it is good practice to re-use instances, and it
+    is a BAD IDEA to try to modify their internal values. The most performant
+    way of constructing colors is to use the static methods which provide 
+    support for various formats and are memoized for efficiency.
+    """
 
     def __init__(self, *args):
         """Construct a Color from one of several formats:
@@ -114,14 +121,24 @@ class Color:
     def unpack(val):
         """Unpack an integer in the format 0xRRGGBB into a Color instance"""
         return Color(val >> 16, (val >> 8) & 0xFF, val & 0xFF)
-    
+
     @staticmethod
+    @lru_cache(1024) # big cache here as it is more likely that we see repeated
+                     # inputs since they are only 8 bits each.
+    def rgb_int(r, g, b):
+        """Construct a Color from RGB values in the range [0,255]"""
+        return Color(r, g, b)
+
+    @staticmethod
+    @lru_cache(64) # memoizing float params is only useful if user is e.g. 
+                   # constructing a lot of Colors with hard-coded float values
     def rgb(r, g, b):
         """Construct a Color from RGB values in the range [0,1]"""
         scale = lambda c: int(max(0, min(1, c)) * 255)
-        return Color(scale(r), scale(g), scale(b))
+        return Color.rgb_int(scale(r), scale(g), scale(b))
     
     @staticmethod
+    @lru_cache(64)
     def hsl(h, s, l):
         """Construct a Color from HSL values in the range [0,1]"""
         return Color.rgb(*colorsys.hls_to_rgb(h, l, s))
