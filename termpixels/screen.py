@@ -135,7 +135,7 @@ class Screen:
             for y in range(self.h):
                 for x in range(self.w):
                     pixel = self._pixels[x][y]
-                    if pixel != self._pixels_cache[x][y]:
+                    if pixel._hash == None and pixel != self._pixels_cache[x][y]:
                         self.render(pixel, x, y)
                         self._pixels_cache[x][y].set(pixel)
                         self._update_count += 1
