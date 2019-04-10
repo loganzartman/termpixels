@@ -43,6 +43,10 @@ if __name__ == "__main__":
     FunTextApp().start()
 ```
 
+### More demos
+* [DoomTerm](https://github.com/loganzartman/doomterm)
+* [tpmatrix](https://github.com/loganzartman/tpmatrix)
+
 ## Features
 * **Unix** (and **Mac**) terminal feature detection with terminfo (via Python [curses][python-curses])
 * **Windows** support through Win32 Console API
