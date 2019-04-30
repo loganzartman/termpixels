@@ -12,6 +12,7 @@ from termpixels.color import color_to_16, color_to_256
 from termpixels.observable import Observable
 from termpixels.terminfo import Terminfo
 from termpixels.unix_keys import Key, Mouse, make_key_parser, make_mouse_parser
+from termpixels.util import terminal_len
 
 def detect_truecolor(terminfo=None):
     """Detect true-color (24-bit) color support
@@ -175,7 +176,7 @@ class UnixBackend(Observable):
 
     def write(self, text):
         print(text, end="")
-        self._cursor_pos = (self._cursor_pos[0] + len(text), self._cursor_pos[1])
+        self._cursor_pos = (self._cursor_pos[0] + terminal_len(text), self._cursor_pos[1])
 
     def flush(self):
         print("", end="", flush=True)

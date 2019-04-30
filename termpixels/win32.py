@@ -9,6 +9,7 @@ from termpixels.color import color_to_16
 from termpixels.observable import Observable
 from termpixels.keys import Key, Mouse
 from termpixels.win32_keys import vk_to_key
+from termpixels.util import terminal_len
 from time import sleep
 
 def detect_win10_console():
@@ -330,7 +331,7 @@ class Win32Backend(Observable):
         idx = y * self._char_data_size[0] + x
         self._char_data[idx].Char.UnicodeChar = ord(text[0])
         self._char_data[idx].Attributes = self._attr
-        self._cursor_pos = (self._cursor_pos[0] + len(text), self._cursor_pos[1])
+        self._cursor_pos = (self._cursor_pos[0] + terminal_len(text), self._cursor_pos[1])
     
     def flush(self):
         # copy character data to active screen buffer

@@ -2,6 +2,7 @@ from threading import Lock
 from copy import copy
 from time import perf_counter
 from termpixels.color import Color
+from termpixels.util import terminal_char_len
 
 class Screen:
     def __init__(self, backend, input):
@@ -136,9 +137,12 @@ class Screen:
                 for x in range(self.w):
                     pixel = self._pixels[x][y]
                     if pixel._hash == None and pixel != self._pixels_cache[x][y]:
-                        self.render(pixel, x, y)
                         self._pixels_cache[x][y].set(pixel)
                         self._update_count += 1
+                        # handle fullwidth (double-wide) characters
+                        if x > 0 and terminal_char_len(self._pixels[x-1][y].char) > 1:
+                            continue
+                        self.render(pixel, x, y)
             self.backend.cursor_pos = self.cursor_pos
             self.backend.flush()
             self._update_duration = perf_counter() - t0
@@ -175,13 +179,24 @@ class Screen:
                 for ch in line:
                     if y < 0 or x < 0 or y >= self.h or x >= self.w:
                         continue
+                    ch_len = terminal_char_len(ch)
                     pixel = self._pixels[x][y]
                     pixel.char = ch
                     if fg:
                         pixel.fg = fg
                     if bg:
                         pixel.bg = bg
-                    x += 1
+                    
+                    # handle fullwidth (double-wide) characters
+                    if ch_len > 1 and x < self.w - 1:
+                        shadowed = self._pixels[x+1][y]
+                        shadowed.char = " "
+                        if fg:
+                            shadowed.fg = fg
+                        if bg:
+                            shadowed.bg = bg
+
+                    x += ch_len
         return (x, y)
 
 class PixelData:
