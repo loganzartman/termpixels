@@ -52,7 +52,7 @@ def wrap_text(text, line_len, *, tab_size=4, word_sep=re.compile(r"\s+|\W"),
 
         # handle wrappable/breakable words
         wl = terminal_len(word)
-        while col + wl >= line_len:
+        while col + wl > line_len:
             if break_word and col < line_len - hl or col == 0:
                 while col + terminal_char_len(word[0]) <= line_len - hl:
                     buf.append(word[0])
