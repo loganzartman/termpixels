@@ -166,7 +166,7 @@ def test_color_to_256():
     # test grayscale output
     assert termpixels.color.color_to_256(Color.rgb(0.2,0.2,0.2)) == 236 
     assert termpixels.color.color_to_256(Color.rgb(0.5,0.5,0.5)) == 244
-    assert termpixels.color.color_to_256(Color.rgb(0.8,0.8,0.8)) == 252
+    assert termpixels.color.color_to_256(Color.rgb(0.8,0.8,0.8)) == 251
 
     # test a couple RGB colors
     assert termpixels.color.color_to_256(Color(255,0,0)) == 196
