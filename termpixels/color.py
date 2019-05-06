@@ -164,7 +164,9 @@ def color_to_256(color):
     output = 0
     if color.r == color.g == color.b:
         # grayscale case
-        if color.r == 255: # pure white
+        if color.r == 0: # pure black
+            output = 16
+        elif color.r == 255: # pure white
             output = 231
         else:
             output = 232 + int(color.r / 256 * 24)
