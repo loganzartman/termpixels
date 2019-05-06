@@ -134,7 +134,7 @@ class Color:
                    # constructing a lot of Colors with hard-coded float values
     def rgb(r, g, b):
         """Construct a Color from RGB values in the range [0,1]"""
-        scale = lambda c: int(max(0, min(1, c)) * 255)
+        scale = lambda c: round(max(0, min(1, c)) * 255)
         return Color.rgb_int(scale(r), scale(g), scale(b))
     
     @staticmethod
