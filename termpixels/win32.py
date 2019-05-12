@@ -370,11 +370,11 @@ class Win32Input(Observable):
             for i in range(numRecords.value):
                 e = buf[i].Event
                 t = buf[i].EventType
+                self.emit("raw_input", buf[i])
                 if t == KEY_EVENT:
                     char = e.KeyEvent.uChar.UnicodeChar
                     code = e.KeyEvent.wVirtualKeyCode
                     if e.KeyEvent.bKeyDown:
-                        self.emit("raw_input", code)
                         key = vk_to_key(code)
                         if key is not None:
                             self.emit("key", key)
