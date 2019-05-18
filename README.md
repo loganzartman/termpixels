@@ -11,10 +11,14 @@ Requires Python 3, and **no dependencies**\*!
 \* Requires [`pytest`](https://pypi.org/project/pytest/) to run tests
 
 ## Purpose
-Creating programs that run inside of terminals seems convoluted. The goal of termpixels is to **abstract the terminal into a 2D array of "pixels"**, or character cells, which each contain a single text character, a foreground color, and a background color. termpixels allows you to modify the screen contents anywhere, at any time, and then handles updating the terminal automatically.
+Creating programs that run inside of terminals seems convoluted. The goal of termpixels is to **abstract the terminal into a 2D array of "pixels"**, or character cells, which each contain a single text character, a foreground color, and a background color. termpixels allows you to modify the screen contents anywhere, at any time, and then handles updating the terminal automatically, as well as simplifying complicated terminal input processing.
+
+Ultimately, this project seeks to make the terminal *more accessible* and *more fun*.
 
 ## Limitations
-There are lots of great libraries for coloring terminal output. This one is **designed for full-screen applications** that completely control the contents of the screen. That means that it automatically saves and clears the screen, resets the cursor position, and accepts input in cbreak mode.
+There are lots of great libraries for coloring terminal output. This one is **designed for full-screen applications** that completely control the contents of the screen. That means that it, e.g., automatically saves and clears the screen, resets the cursor position, and accepts input in cbreak mode. 
+
+It's not the best solution for simply printing colored text, though [you can do that if you want][text coloring].
 
 ## Demo
 ![Demo gif](fun-text.gif)
@@ -24,9 +28,6 @@ from time import time
 from math import sin
 
 class FunTextApp(App):
-    def __init__(self):
-        super().__init__()
-    
     def on_frame(self):
         self.screen.clear()                           # remove everything from the screen
         text = "Hello world, from termpixels!"
@@ -73,3 +74,4 @@ if __name__ == "__main__":
 [ncurses]: https://www.gnu.org/software/ncurses/
 [pypi]: https://pypi.org/project/termpixels/
 [byocl]: http://www.lihaoyi.com/post/BuildyourownCommandLinewithANSIescapecodes.html
+[text coloring]: https://github.com/loganzartman/termpixels/blob/master/termpixels/examples/simple_text_coloring.py
