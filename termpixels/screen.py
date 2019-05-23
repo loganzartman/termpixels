@@ -25,6 +25,7 @@ class Screen:
         self.lock = Lock()
         self.backend = backend
         self.cursor_pos = (0, 0)
+        self.print_pos = (0, 0)
         self._w = 0
         self._h = 0
         self._pixels = []
@@ -157,12 +158,20 @@ class Screen:
         self.backend.bg = pixel.bg
         self.backend.write(pixel.char)
 
-    def print(self, text, x, y, *, fg=None, bg=None):
+    def print(self, text, x=None, y=None, *, fg=None, bg=None):
         """Print a string of text starting at a particular location.
 
         Prints a string of one or more lines of text starting at the given
         location, ignoring text that falls outside the bounds of the buffer.
+        Newlines can be used to move the cursor down a line and back to the
+        initial x position. The cursor is NOT necessarily moved all the way
+        to the left of the screen.
         
+        Returns the location of the cursor after the text has been printed.
+        
+        If a location is not given, then the text will be printed at the end
+        of the last text printed, or at (0,0) if nothing has been printed.
+
         Replaces the foreground and background of modified pixels if each is 
         specified. If colors are not specified, they will be left alone. 
         
@@ -171,6 +180,11 @@ class Screen:
         using print().
         """
         with self.lock:
+            if x == None:
+                x = self.print_pos[0]
+            if y == None:
+                y = self.print_pos[1]
+
             y0 = y
             tab = x
             for linenum, line in enumerate(text.splitlines()):
@@ -197,7 +211,8 @@ class Screen:
                             shadowed.bg = bg
 
                     x += ch_len
-        return (x, y)
+        self.print_pos = (x, y)
+        return self.print_pos
 
 class PixelData:
     """Represents a single character cell.
