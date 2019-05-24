@@ -6,6 +6,7 @@ import re
 _ambiguous_is_wide = False
 def set_ambiguous_is_wide(is_wide):
     """ set whether ambiguous characters are considered to be wide """
+    global _ambiguous_is_wide
     if _ambiguous_is_wide != is_wide:
         _ambiguous_is_wide = is_wide
         terminal_char_len.clear_cache()
