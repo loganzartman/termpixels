@@ -56,10 +56,11 @@ if __name__ == "__main__":
 * Terminal (re)**size detection**
 * Asynchronous input
 	* **Keyboard** input with support for special keys like arrows, function keys, escape, etc.
-	* **Mouse** click and move input in terminals supporting xterm mouse
+	* **Mouse** click, scroll and move input in terminals supporting xterm mouse
 * 16, 256, and true **color** output (with detection for best supported mode)
 * Display the **cursor** anywhere (or hide it!)
-* **Preserves** the state of the user's terminal--doesn't clear it.
+* **Preserves** the state of the user's terminal using alternate screen buffer.
+* Rudimentary support for **fullwidth** characters.
 * No reliance on ncurses except for terminfo lookup
 * 100% Python
 * and more
