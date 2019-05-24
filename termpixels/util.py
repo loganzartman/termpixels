@@ -31,6 +31,11 @@ def terminal_printable(ch):
     """ determine if a character is "printable" """
     return not category(ch).startswith("C")
 
+_newline_regex = re.compile(r"\r|\n|\r\n")
+def splitlines_print(s):
+    """ like str.splitlines() but keeps all empty lines """
+    return _newline_regex.split(s)
+
 def wrap_text(text, line_len, *, tab_size=4, word_sep=re.compile(r"\s+|\W"), 
               break_word=False, hyphen=""):
     """ returns a terminal-line-wrapped version of text """

@@ -2,7 +2,7 @@ from threading import Lock
 from copy import copy
 from time import perf_counter
 from termpixels.color import Color
-from termpixels.util import terminal_char_len
+from termpixels.util import terminal_char_len, splitlines_print
 
 class Screen:
     def __init__(self, backend, input):
@@ -187,7 +187,7 @@ class Screen:
 
             y0 = y
             tab = x
-            for linenum, line in enumerate(text.splitlines()):
+            for linenum, line in enumerate(splitlines_print(text)):
                 y = y0 + linenum
                 x = tab
                 for ch in line:
