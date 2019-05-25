@@ -1,11 +1,12 @@
 """A utility for building complete terminal applications.
 
 The App class wires together various components of termpixels to provide a
-complete platform for building terminal applications. Namely, it combines:
-    - the Backend implementation, which provides output capabilities
-    - the Input implementation, which provides input capabilities
-    - the Screen, which provides higher-level functionality on top of the
-      backend and input.
+complete platform for building terminal applications. It provides the following
+pre-built instances as member variables:
+    - backend: provides output (rendering) capabilities
+    - input: provides input (keyboard, mouse, etc.) capabilities
+    - screen: provides higher-level interface for printing text, filling areas,
+              reading characters, etc.
 
 The App class is generally used by extending it and overriding special event
 handler methods to implement the application's business logic. An instance of
@@ -13,9 +14,6 @@ the subclass is constructed, and then the start() method is called on it, e.g.
 
 Usage:
     class MyApp(App):
-        def __init__(self):
-            super().__init__()
-        
         def on_frame(self):
             ...
         ...
@@ -34,7 +32,7 @@ class App:
 
         The constructor may be overridden in subclasses to perform one-time
         initialization routines, like creating event listeners. Most start-up 
-        code should be placed in the on_frame() method, as it will be called
+        code should be placed in the on_start() method, as it will be called
         each time the app starts (if it starts more than once), and the 
         terminal will be fully configured and ready for use.
         """
