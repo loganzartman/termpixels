@@ -123,14 +123,14 @@ class Color:
         return Color(val >> 16, (val >> 8) & 0xFF, val & 0xFF)
 
     @staticmethod
-    @lru_cache(1024) # big cache here as it is more likely that we see repeated
+    @lru_cache(2048) # big cache here as it is more likely that we see repeated
                      # inputs since they are only 8 bits each.
     def rgb_int(r, g, b):
         """Construct a Color from RGB values in the range [0,255]"""
         return Color(r, g, b)
 
     @staticmethod
-    @lru_cache(64) # memoizing float params is only useful if user is e.g. 
+    @lru_cache(32) # memoizing float params is only useful if user is e.g. 
                    # constructing a lot of Colors with hard-coded float values
     def rgb(r, g, b):
         """Construct a Color from RGB values in the range [0,1]"""
@@ -138,7 +138,7 @@ class Color:
         return Color.rgb_int(scale(r), scale(g), scale(b))
     
     @staticmethod
-    @lru_cache(64)
+    @lru_cache(32)
     def hsl(h, s, l):
         """Construct a Color from HSL values in the range [0,1]"""
         return Color.rgb(*colorsys.hls_to_rgb(h, l, s))
