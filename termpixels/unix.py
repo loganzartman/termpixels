@@ -260,11 +260,11 @@ class UnixInput(Observable):
                 chars = chars[1:]
 
     def set_cbreak(self, on = True):
-        if on:
+        if on and not self._cbreak:
             self._old_attr = termios.tcgetattr(self._fd_in)
             tty.setcbreak(self._fd_in)
             self._cbreak = True
-        else:
+        elif self._cbreak:
             termios.tcsetattr(self._fd_in, termios.TCSAFLUSH, self._old_attr)
             self._cbreak = False
     
