@@ -48,11 +48,13 @@ class App:
         self._mouse = mouse
         self._stopping = False
 
-    def start(self):
+    def start(self, *args, **kwargs):
         """Start collecting input and run the App's main loop.
         
         Starts the application and begins calling the on_frame() method at the
         framerate specified in the constructor.
+
+        Forwards all arguments to the on_start() callback.
         """
         try:
             self._stopping = False
@@ -65,7 +67,7 @@ class App:
             if self._mouse:
                 self.backend.mouse_tracking = True
             self.input.start()
-            self.on_start()
+            self.on_start(*args, **kwargs)
             while not self._stopping:
                 t0 = perf_counter()
                 self.on_frame()
