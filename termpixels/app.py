@@ -68,6 +68,7 @@ class App:
                 self.backend.mouse_tracking = True
             self.input.start()
             self.on_start(*args, **kwargs)
+            self.backend.flush()
             while not self._stopping:
                 t0 = perf_counter()
                 self.on_frame()
