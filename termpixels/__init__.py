@@ -5,4 +5,4 @@ from termpixels.screen import Screen
 from termpixels.buffer import Buffer, PixelData
 
 name = "termpixels"
-__version__ = "0.1.0"
+__version__ = "0.0.9"
