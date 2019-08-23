@@ -9,7 +9,7 @@ def set_ambiguous_is_wide(is_wide):
     global _ambiguous_is_wide
     if _ambiguous_is_wide != is_wide:
         _ambiguous_is_wide = is_wide
-        terminal_char_len.clear_cache()
+        terminal_char_len.cache_clear()
 
 @lru_cache(1024)
 def terminal_char_len(ch):
