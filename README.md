@@ -1,6 +1,9 @@
 # termpixels
 *the terminal as a character-cell matrix*
 
+[![Build Status](https://travis-ci.org/loganzartman/termpixels.svg?branch=master)](https://travis-ci.org/loganzartman/termpixels)
+[![codecov](https://codecov.io/gh/loganzartman/termpixels/branch/master/graph/badge.svg)](https://codecov.io/gh/loganzartman/termpixels)
+
 ## Get it
 [This project is on PyPI][pypi].
 
@@ -16,7 +19,7 @@ Creating programs that run inside of terminals seems convoluted. The goal of ter
 Ultimately, this project seeks to make the terminal *more accessible* and *more fun*.
 
 ## Limitations
-There are lots of great libraries for coloring terminal output. This one is **designed for full-screen applications** that completely control the contents of the screen. That means that it, e.g., automatically saves and clears the screen, resets the cursor position, and accepts input in cbreak mode. 
+There are lots of great libraries for coloring terminal output. This one is **designed for full-screen applications** that completely control the contents of the screen. That means that it, e.g., automatically saves and clears the screen, resets the cursor position, and accepts input in cbreak mode.
 
 It's not the best solution for simply printing colored text, though [you can do that if you want][text coloring].
 
@@ -31,7 +34,7 @@ class FunTextApp(App):
     def on_frame(self):
         self.screen.clear()                           # remove everything from the screen
         text = "Hello world, from termpixels!"
-        
+
         for i, c in enumerate(text):
             f = i / len(text)
             color = Color.hsl(f + time(), 1, 0.5)     # create a color from a hue value
@@ -39,7 +42,7 @@ class FunTextApp(App):
             offset = sin(time() * 3 + f * 5) * 2      # some arbitrary math
             y = round(self.screen.h / 2 + offset)     # vertical center with an offset
             self.screen.print(c, x + i, y, fg=color)  # draw the text to the screen buffer
-        
+
         self.screen.update()                          # commit the changes to the screen
 
 if __name__ == "__main__":
