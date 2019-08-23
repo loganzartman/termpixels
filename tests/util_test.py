@@ -16,14 +16,20 @@ assert east_asian_width(narrow_char) == "Na"
 assert east_asian_width(wide_char) == "W"
 assert east_asian_width(ambiguous_char) == "A"
 
-def test_terminal_char_len():
+def test_terminal_char_len_narrow():
     assert terminal_char_len(narrow_char) == 1
+
+def test_terminal_char_len_wide():
     assert terminal_char_len(wide_char) == 2
+
+def test_terminal_char_len_control():
     assert terminal_char_len(control_char) == 0
 
+def test_terminal_char_len_tab():
     # no way to tell tab width without context
     assert terminal_char_len("\t") == None
 
+def test_terminal_char_len_ambiguous():
     set_ambiguous_is_wide(False)
     assert terminal_char_len(ambiguous_char) == 1
 
@@ -37,15 +43,24 @@ def test_terminal_len():
 def test_terminal_printable():
     assert terminal_printable(narrow_char)
     assert terminal_printable(wide_char)
+
+def test_terminal_printable_control():
     assert not terminal_printable(control_char)
 
-def test_splitlines_print():
+def test_splitlines_print_unix():
     assert splitlines_print("a\nb") == ["a", "b"]
+    assert splitlines_print("a\rb") == ["a", "b"]
+
+def test_splitlines_print_windows():
     assert splitlines_print("a\r\nb") == ["a", "b"]
+
+def test_splitlines_print_empty_lines():
     assert splitlines_print("a\n\nb") == ["a", "", "b"]
     assert splitlines_print("a\n\r\n\nb") == ["a","", "", "b"]
 
 def test_wrap_text():
     assert wrap_text("a b c d e", 3) == "a b\nc d\ne"
     assert wrap_text("alpha beta", 6) == "alpha \nbeta"
+
+def test_wrap_text_fullwidth():
     assert wrap_text("你好", 2) == "你\n好"
