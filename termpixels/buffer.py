@@ -101,7 +101,10 @@ class Buffer:
                     self._pixels[i][j].set(blank)
     
     def blit(self, buffer, x=0, y=0, x0=0, y0=0, x1=None, y1=None):
-        """ copy a buffer (or a rectangular region of it) to this buffer 
+        """ copy a buffer to this buffer 
+
+        Copy a sub-region by specifying two corners (x0, y0) and (x1, y1) where
+        all coordinates are inclusive.
 
         Also supports blitting anything that implements a blit_to() method with
         the same signature, but with the "buffer" argument being the 
@@ -112,13 +115,16 @@ class Buffer:
         if y1 == None:
             y1 = buffer.h
         
+        x0, x1 = (min(x0, x1), max(x0, x1))
+        y0, y1 = (min(y0, y1), max(y0, y1))
+
         if not isinstance(buffer, Buffer):
             if hasattr(buffer, "blit_to") and callable(buffer.blit_to):
                 return buffer.blit_to(self, x=x, y=y, x0=x0, y0=y0, x1=x1, y1=y1)
             raise ValueError("buffer must be a Buffer instance or have a blit_to() method.")
         
-        for dx in range(min(x1-x0, self.w)):
-            for dy in range(min(y1-y0, self.h)):
+        for dx in range(min(x1-x0+1, self.w)):
+            for dy in range(min(y1-y0+1, self.h)):
                 dst_x = x + dx
                 dst_y = y + dy
                 src_x = x0 + dx
