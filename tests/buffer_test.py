@@ -1,6 +1,8 @@
+import pytest
+from unittest.mock import Mock
+from types import SimpleNamespace
 from termpixels.buffer import Buffer
 from termpixels.buffer import PixelData
-import pytest
 
 def print_buffer(buffer):
     for y in range(buffer.h):
@@ -158,3 +160,12 @@ def test_blit_buffer_inverted(source_target_sample_1):
     assert target.at(1, 0).char == "S"
     assert target.at(0, 1).char == "T"
     assert target.at(1, 1).char == "T"
+
+def test_blit_blittable():
+    blittable = SimpleNamespace()
+    blittable.blit_to = Mock()
+    blittable.w = 1
+    blittable.h = 1
+    buffer = Buffer(1, 1)
+    buffer.blit(blittable)
+    assert blittable.blit_to.called
