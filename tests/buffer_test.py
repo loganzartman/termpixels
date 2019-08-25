@@ -2,6 +2,10 @@ from termpixels.buffer import Buffer
 from termpixels.buffer import PixelData
 import pytest
 
+def print_buffer(buffer):
+    for y in range(buffer.h):
+        print("".join(buffer.at(x, y).char for x in range(buffer.w)))
+
 def test_buffer_constructor_size():
     buffer = Buffer(8, 6)
     assert buffer.w == 8
@@ -117,3 +121,40 @@ def test_print_fullwidth_shadowing():
     assert buffer.at(1, 0).char == " "
     assert buffer.at(2, 0).char == "好"
     assert buffer.at(3, 0).char == " "
+
+def test_blit_buffer():
+    source = Buffer(2, 1)
+    target = Buffer(2, 2)
+    target.clear(char="T")
+    source.at(0, 0).char = "X"
+    source.at(1, 0).char = "Y"
+
+    target.blit(source, y=1)
+    assert target.at(0, 0).char == "T"
+    assert target.at(1, 0).char == "T"
+    assert target.at(0, 1).char == "X"
+    assert target.at(1, 1).char == "Y"
+
+@pytest.fixture
+def source_target_sample_1():
+    source = Buffer(3, 2)
+    target = Buffer(2, 2)
+    source.fill(1, 1, 2, 1, char="S")
+    target.clear(char="T")
+    return source, target
+
+def test_blit_buffer_region(source_target_sample_1):
+    source, target = source_target_sample_1
+    target.blit(source, x=0, y=0, x0=1, y0=1, x1=2, y1=1)
+    assert target.at(0, 0).char == "S"
+    assert target.at(1, 0).char == "S"
+    assert target.at(0, 1).char == "T"
+    assert target.at(1, 1).char == "T"
+
+def test_blit_buffer_inverted(source_target_sample_1):
+    source, target = source_target_sample_1
+    target.blit(source, x=0, y=0, x1=1, y1=1, x0=2, y0=1)
+    assert target.at(0, 0).char == "S"
+    assert target.at(1, 0).char == "S"
+    assert target.at(0, 1).char == "T"
+    assert target.at(1, 1).char == "T"
