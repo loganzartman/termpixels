@@ -1,8 +1,8 @@
 # termpixels
 *the terminal as a character-cell matrix*
 
-[![Build Status](https://travis-ci.org/loganzartman/termpixels.svg?branch=master)](https://travis-ci.org/loganzartman/termpixels)
-[![codecov](https://codecov.io/gh/loganzartman/termpixels/branch/master/graph/badge.svg)](https://codecov.io/gh/loganzartman/termpixels)
+[![Build Status](https://github.com/loganzartman/termpixels/workflows/build/badge.svg)](https://github.com/loganzartman/termpixels/actions)
+[![Code Coverage](https://codecov.io/gh/loganzartman/termpixels/branch/master/graph/badge.svg)](https://codecov.io/gh/loganzartman/termpixels)
 
 ## Get it
 [This project is on PyPI][pypi].
