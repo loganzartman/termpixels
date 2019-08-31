@@ -7,6 +7,7 @@ import queue
 import signal
 import fcntl
 import struct
+import selectors
 from queue import Queue
 from termpixels.color import color_to_16, color_to_256
 from termpixels.observable import Observable
@@ -185,15 +186,21 @@ class UnixInput(Observable):
     def __init__(self):
         super().__init__()
         self._old_attr = None
-        self._fd_in = 0 # stdin
+        self._fd_in = sys.stdin.fileno()
         self._cbreak = False
         self._ti = Terminfo()
         self._key_parser = make_key_parser(self._ti)
         self._mouse_parser = make_mouse_parser(self._ti)
 
-        self._exited_event = threading.Event()
+        self._has_exited = True
+        self._has_exited_lock = threading.Lock()
+
+        self._stdin_selector = selectors.DefaultSelector()
+        self._stdin_selector.register(self._fd_in, selectors.EVENT_READ)
+
         self._input_queue = Queue()
         self._collector = threading.Thread(target=self.collector_func, daemon=True)
+
         self._grouper = threading.Thread(target=self.grouper_func, daemon=True)
 
         self._sigwinch_event = threading.Event()
@@ -204,19 +211,21 @@ class UnixInput(Observable):
         self._sigwinch_event.set()
     
     def watch_sigwinch(self):
-        while not self._exited_event.is_set():
+        while not self._has_exited:
             self._sigwinch_event.wait()
             self._sigwinch_event.clear()
             self.emit("resize")
-
+    
     @property
     def cbreak(self):
         return self._cbreak
 
     def collector_func(self):
-        while not self._exited_event.is_set():
-            ch = self.getch()
-            self._input_queue.put(ch)
+        while not self._has_exited:
+            self._stdin_selector.select()
+            data = sys.stdin.read(-1)
+            for ch in data:
+                self._input_queue.put(ch)
     
     def grouper_func(self):
         buffer = []
@@ -225,7 +234,7 @@ class UnixInput(Observable):
         def dump():
             self.parse_group("".join(buffer))
             buffer.clear()
-        while not self._exited_event.is_set():
+        while not self._has_exited:
             try:
                 timeout = group_timeout if grouping else None
                 ch = self._input_queue.get(timeout=timeout)
@@ -269,16 +278,29 @@ class UnixInput(Observable):
             self._cbreak = False
     
     def start(self):
-        self.set_cbreak(True)
-        self._collector.start()
-        self._grouper.start()
-        self._sigwinch_consumer.start()
+        with self._has_exited_lock:
+            if not self._has_exited:
+                raise RuntimeError("Input already started.")
+            self._has_exited = False
+            self.set_cbreak(True)
+            set_fd_nonblocking(self._fd_in, True)
+            self._collector.start()
+            self._grouper.start()
+            self._sigwinch_consumer.start()
 
     def stop(self):
-        self.set_cbreak(False)
-        self._exited_event.set()
-    
-    def getch(self):
-        if not self.cbreak:
-            raise Exception("cbreak not enabled.")
-        return sys.stdin.read(1)
+        with self._has_exited_lock:
+            if self._has_exited:
+                raise RuntimeError("Input already stopped.")
+            set_fd_nonblocking(self._fd_in, False)
+            self.set_cbreak(False)
+            self._has_exited = True
+
+def set_fd_nonblocking(fd, is_nonblocking):
+    """ set the NONBLOCK flag on a file descriptor, preserving other flags. """
+    flags = fcntl.fcntl(fd, fcntl.F_GETFL)
+    if is_nonblocking:
+        flags |= os.O_NONBLOCK
+    else:
+        flags &= ~os.O_NONBLOCK
+    fcntl.fcntl(fd, fcntl.F_SETFL, flags)

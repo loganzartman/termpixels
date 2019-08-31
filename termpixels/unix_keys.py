@@ -22,7 +22,7 @@ MASK_BUTTON = 0b11
 MASK_WHEEL = 0b1000000
 class SgrMouseParser:    
     def __init__(self, mouse_prefix):
-        self.regex = re.compile(r"\x1b\[(?:\<|M)(.+);(.+);(.+)(m|M)")
+        self.regex = re.compile(r"\x1b\[(?:\<|M)(\d+);(\d+);(\d+)(m|M)")
     
     def parse(self, group):
         match = self.regex.match(group)
