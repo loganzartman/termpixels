@@ -37,7 +37,7 @@ def splitlines_print(s):
     return _newline_regex.split(s)
 
 def wrap_text(text, line_len, *, tab_size=4, word_sep=re.compile(r"\s+|\W"),
-              break_word=False, hyphen=""):
+              break_word=False, hyphen="", newline="\n"):
     """ returns a terminal-line-wrapped version of text """
     text = text.replace("\t", " " * tab_size)
     hl = terminal_len(hyphen)
@@ -65,7 +65,7 @@ def wrap_text(text, line_len, *, tab_size=4, word_sep=re.compile(r"\s+|\W"),
                     col += terminal_char_len(word[0])
                     word = word[1:]
                 buf.append(hyphen)
-            buf.append("\n")
+            buf.append(newline)
             col = 0
             wl = terminal_len(word)
         buf.append(word)
@@ -78,7 +78,7 @@ def wrap_text(text, line_len, *, tab_size=4, word_sep=re.compile(r"\s+|\W"),
                 buf.append(sep[0])
                 col += terminal_char_len(sep[0])
                 sep = sep[1:]
-            buf.append("\n")
+            buf.append(newline)
             col = 0
         else:
             buf.append(sep)
