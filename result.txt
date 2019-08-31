@@ -1,0 +1,3 @@
+Terminal: xterm-256color (127x33)
+Avg time per frame: 0.0034
+Avg framerate: 293.06
