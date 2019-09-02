@@ -171,16 +171,21 @@ class UnixBackend(Observable):
     
     def write_escape(self, binary):
         if type(binary) == str:
-            print(binary, end="")
+            sys.stdout.write(binary)
         else:
-            print(binary.decode("ascii"), end="")
+            sys.stdout.write(binary.decode("ascii"))
 
     def write(self, text):
-        print(text, end="")
+        sys.stdout.write(text)
         self._cursor_pos = (self._cursor_pos[0] + terminal_len(text), self._cursor_pos[1])
 
     def flush(self):
-        print("", end="", flush=True)
+        while True:
+            try:
+                sys.stdout.flush()
+                break
+            except BlockingIOError:
+                pass
 
 class UnixInput(Observable):
     def __init__(self):
