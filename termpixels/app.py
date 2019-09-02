@@ -25,6 +25,7 @@ Usage:
 from time import sleep, perf_counter
 from termpixels.screen import Screen
 from termpixels.detector import detect_backend, detect_input
+from termpixels.observable import poll_events
 
 class App:
     def __init__(self, *, mouse=False, framerate=30):
@@ -71,6 +72,7 @@ class App:
             self.backend.flush()
             while not self._stopping:
                 t0 = perf_counter()
+                poll_events()
                 self.on_frame()
                 dt = perf_counter() - t0
                 sleep(max(1/500, 1/self._framerate - dt))
