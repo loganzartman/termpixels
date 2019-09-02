@@ -1,13 +1,17 @@
-from termpixels import App, Color
+from termpixels.detector import detect_input, detect_backend
+from time import sleep
 
-class InputTestApp(App):
-    def __init__(self):
-        super().__init__(mouse=True)
-        self.input.listen("raw_input", lambda chars: self.on_raw(chars))
-    
-    def on_raw(self, chars):
-        self.screen.clear()
-        self.screen.print(repr(chars), 1, 1)
-        self.screen.update()
+def main():
+    backend = detect_backend()
+    backend.mouse_tracking = True
+    backend.flush()
 
-InputTestApp().start()
+    inpt = detect_input()
+    inpt.listen("raw_input", lambda chars: print(repr(chars)))
+    inpt.start()
+
+    while True:
+        sleep(1/60)
+
+if __name__ == "__main__":
+    main()
