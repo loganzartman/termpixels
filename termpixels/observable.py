@@ -4,10 +4,11 @@ from queue import Queue, Empty
 main_event_queue = Queue()
 
 class Event:
-    def __init__(self, source, name, data):
+    def __init__(self, source, name, args, kwargs):
         self.source = source
         self.name = name
-        self.data = data
+        self.args = args
+        self.kwargs = kwargs
 
 class Observable:
     """A base class that implements a simple event emitter.
@@ -28,15 +29,15 @@ class Observable:
         """Remove a particular event listener for a particular event name."""
         self._listeners[event_name].remove(listener)
     
-    def emit(self, event_name, data=None):
+    def emit(self, event_name, *args, **kwargs):
         """Invoke all listeners for a particular event with arbitrary data."""
-        self._event_queue.put(Event(source=self, name=event_name, data=data))
+        self._event_queue.put(Event(source=self, name=event_name, args=args, kwargs=kwargs))
 
 def poll_events(queue=main_event_queue):
     try:
         while True:
             event = queue.get_nowait()
             for l in event.source._listeners[event.name]:
-                l(event.data)
+                l(*event.args, **event.kwargs)
     except Empty:
         pass
