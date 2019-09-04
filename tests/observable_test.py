@@ -75,3 +75,20 @@ def test_observable_emit_kwargs():
     o.emit("test", a=1, b=2)
     poll_events()
     assert result == 2
+
+def test_observable_on():
+    o = Observable()
+    result = None
+
+    @o.on("test")
+    def listener(data):
+        nonlocal result
+        result = data
+    
+    o.emit("test", 1)
+    poll_events()
+    assert result == 1
+
+    listener.off()
+    o.emit("test", 2)
+    assert result == 1

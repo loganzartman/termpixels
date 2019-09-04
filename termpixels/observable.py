@@ -32,6 +32,16 @@ class Observable:
     def emit(self, event_name, *args, **kwargs):
         """Invoke all listeners for a particular event with arbitrary data."""
         self._event_queue.put(Event(source=self, name=event_name, args=args, kwargs=kwargs))
+    
+    def on(self, event_name):
+        """listen() as a decorator."""
+        def decorator(fn):
+            def wrapper(*args, **kwargs):
+                fn(*args, **kwargs)
+            wrapper.off = lambda: self.unlisten(event_name, wrapper)
+            self.listen(event_name, wrapper)
+            return wrapper
+        return decorator
 
 def poll_events(queue=main_event_queue):
     try:
