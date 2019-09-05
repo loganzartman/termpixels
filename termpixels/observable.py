@@ -1,5 +1,6 @@
 from collections import defaultdict
 from queue import Queue, Empty
+from threading import Thread
 
 main_event_queue = Queue()
 
@@ -30,11 +31,14 @@ class Observable:
         self._listeners[event_name].remove(listener)
     
     def emit(self, event_name, *args, **kwargs):
-        """Invoke all listeners for a particular event with arbitrary data."""
+        """Enqueue an event to trigger all relevant listeners with arbitrary data."""
         self._event_queue.put(Event(source=self, name=event_name, args=args, kwargs=kwargs))
     
     def on(self, event_name):
-        """listen() as a decorator."""
+        """listen() as a decorator.
+        
+        The wrapper function includes a .off() method which unlistens it.
+        """
         def decorator(fn):
             def wrapper(*args, **kwargs):
                 fn(*args, **kwargs)
@@ -50,10 +54,33 @@ class Observable:
         source.listen(event_name, propagate)
 
 def poll_events(queue=main_event_queue):
+    """Immediately dispatch (invoke listeners for) all events in a queue."""
     try:
         while True:
             event = queue.get_nowait()
-            for l in event.source._listeners[event.name]:
-                l(*event.args, **event.kwargs)
+            _dispatch_event(event)
     except Empty:
         pass
+
+_is_polling = set()
+def start_polling(queue=main_event_queue):
+    """Create and start a daemon to continuously poll a queue.
+
+    If a daemon was started, returns True.
+    If a daemon already exists for the given queue, returns False.
+    """
+    if id(queue) in _is_polling:
+        return False
+    _is_polling.add(id(queue))
+    def fn():
+        while True:
+            event = queue.get()
+            _dispatch_event(event)
+    thread = Thread(target=fn, daemon=True)
+    thread.start()
+    return True
+
+def _dispatch_event(event):
+    """Invoke all listeners with a given Event instance."""
+    for l in event.source._listeners[event.name]:
+        l(*event.args, **event.kwargs)
