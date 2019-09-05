@@ -2,24 +2,36 @@ import random
 import math
 from termpixels import App, Color
 
-class ParticleApp(App):
-    def __init__(self):
-        super().__init__(mouse=True, framerate=60)
-    
-    def on_start(self):
-        self.mouse_x = 0
-        self.mouse_y = 0
-        self.mouse_px = 0
-        self.mouse_py = 0
-        self.particles = []
+class Particle:
+    def __init__(self, x, y, vx = 0, vy = 0):
+        self.x = x
+        self.y = y
+        self.vx = vx
+        self.vy = vy
 
-    def on_mouse(self, m):
-        self.mouse_x = m.x
-        self.mouse_y = m.y
-    
-    def on_frame(self):
-        dx = self.mouse_x - self.mouse_px
-        dy = self.mouse_y - self.mouse_py
+    def update(self):
+        self.x += self.vx
+        self.y += self.vy
+        self.vy += 0.1
+
+
+def main():
+    app = App(mouse=True, framerate=60)
+    app.mouse_x = 0
+    app.mouse_y = 0
+    app.mouse_px = 0
+    app.mouse_py = 0
+    app.particles = []
+
+    @app.on("mouse")
+    def on_mouse(m):
+        app.mouse_x = m.x
+        app.mouse_y = m.y
+        
+    @app.on("frame")
+    def on_frame():
+        dx = app.mouse_x - app.mouse_px
+        dy = app.mouse_y - app.mouse_py
         l = math.sqrt(dx ** 2 + dy ** 2)
         d = math.atan2(dy, dx)
 
@@ -30,30 +42,21 @@ class ParticleApp(App):
             dd = d + random.uniform(-0.2, 0.2)
             vx = ll * math.cos(dd)
             vy = ll * math.sin(dd)
-            self.particles.append(Particle(self.mouse_px + dx * f, self.mouse_py + dy * f, vx, vy))
+            app.particles.append(Particle(app.mouse_px + dx * f, app.mouse_py + dy * f, vx, vy))
 
-        self.screen.clear()
-        for i, p in enumerate(self.particles):
-            col = Color.hsl(i/len(self.particles), 1.0, 0.5)
-            self.screen.print(" ", int(p.x), int(p.y), bg=col)
+        app.screen.clear()
+        for i, p in enumerate(app.particles):
+            col = Color.hsl(i/len(app.particles), 1.0, 0.5)
+            app.screen.print(" ", int(p.x), int(p.y), bg=col)
             p.update()
-            if p.x < 0 or p.y < 0 or p.x >= self.screen.w or p.y >= self.screen.h:
-                self.particles.remove(p)
-        self.screen.update()
+            if p.x < 0 or p.y < 0 or p.x >= app.screen.w or p.y >= app.screen.h:
+                app.particles.remove(p)
+        app.screen.update()
 
-        self.mouse_px = self.mouse_x
-        self.mouse_py = self.mouse_y
+        app.mouse_px = app.mouse_x
+        app.mouse_py = app.mouse_y
 
-class Particle:
-	def __init__(self, x, y, vx = 0, vy = 0):
-		self.x = x
-		self.y = y
-		self.vx = vx
-		self.vy = vy
+    app.start()
 
-	def update(self):
-		self.x += self.vx
-		self.y += self.vy
-		self.vy += 0.1
-
-ParticleApp().start()
+if __name__ == "__main__":
+    main()
