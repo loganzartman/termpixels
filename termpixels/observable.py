@@ -1,6 +1,6 @@
 from collections import defaultdict
 from queue import Queue, Empty
-from threading import Thread
+from threading import Thread, Lock
 
 main_event_queue = Queue()
 
@@ -63,15 +63,18 @@ def poll_events(queue=main_event_queue):
         pass
 
 _is_polling = set()
+_is_polling_lock = Lock()
 def start_polling(queue=main_event_queue):
     """Create and start a daemon to continuously poll a queue.
 
     If a daemon was started, returns True.
     If a daemon already exists for the given queue, returns False.
     """
-    if id(queue) in _is_polling:
-        return False
-    _is_polling.add(id(queue))
+    with _is_polling_lock:
+        if id(queue) in _is_polling:
+            return False
+        _is_polling.add(id(queue))
+    
     def fn():
         while True:
             event = queue.get()
