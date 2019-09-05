@@ -92,3 +92,19 @@ def test_observable_on():
     listener.off()
     o.emit("test", 2)
     assert result == 1
+
+def test_observable_propagate_event():
+    a = Observable()
+    b = Observable()
+
+    b.propagate_event(a, "test")
+
+    result = None
+    def listener(data):
+        nonlocal result
+        result = data
+    b.listen("test", listener)
+
+    a.emit("test", 123)
+    poll_events()
+    assert result == 123

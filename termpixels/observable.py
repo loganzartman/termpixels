@@ -43,6 +43,12 @@ class Observable:
             return wrapper
         return decorator
 
+    def propagate_event(self, source, event_name):
+        """Create a listener that propagates all events of the given name from another Observable."""
+        def propagate(*args, **kwargs):
+            self.emit(event_name, *args, **kwargs)
+        source.listen(event_name, propagate)
+
 def poll_events(queue=main_event_queue):
     try:
         while True:
