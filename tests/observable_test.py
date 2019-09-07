@@ -1,4 +1,5 @@
-from termpixels.observable import Observable, poll_events
+from termpixels.observable import Observable, poll_events, Event
+import threading
 import pytest
 
 def test_observable_listen_emit():
@@ -143,3 +144,33 @@ def test_observable_event_ordering():
     o.emit("C")
     poll_events()
     assert A_fired and B_fired and C_fired
+
+def test_observable_track_dispatch():
+    o = Observable()
+    
+    event = Event(source=o, name="test", track_dispatch=True)
+    o._event_queue.put(event)
+
+    assert not event._dispatched.is_set()
+    poll_events()
+    assert event._dispatched.is_set()
+
+def test_observable_event_await_dispatched():
+    o = Observable()
+    
+    event = Event(source=o, name="test", track_dispatch=True)
+    o._event_queue.put(event)
+
+    done = False
+    def awaiter():
+        nonlocal done
+        event.await_dispatched()
+        done = True
+
+    t = threading.Thread(target=awaiter)
+    t.start()
+
+    assert not done
+    poll_events()
+    t.join(timeout=0.5)
+    assert done
