@@ -108,3 +108,38 @@ def test_observable_propagate_event():
     a.emit("test", 123)
     poll_events()
     assert result == 123
+
+def test_observable_event_ordering():
+    # events should be dispatched in the order they are emitted
+    o = Observable()
+    
+    A_fired = False
+    B_fired = False
+    C_fired = False
+
+    @o.on("A")
+    def on_A():
+        nonlocal A_fired
+        assert not B_fired
+        assert not C_fired
+        A_fired = True
+
+    @o.on("B")
+    def on_B():
+        nonlocal B_fired
+        assert A_fired
+        assert not C_fired
+        B_fired = True
+    
+    @o.on("C")
+    def on_C():
+        nonlocal C_fired
+        assert A_fired
+        assert B_fired
+        C_fired = True
+    
+    o.emit("A")
+    o.emit("B")
+    o.emit("C")
+    poll_events()
+    assert A_fired and B_fired and C_fired
