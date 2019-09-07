@@ -18,8 +18,6 @@ from termpixels.util import terminal_len
 def detect_truecolor(terminfo=None):
     """Detect true-color (24-bit) color support
     """
-    # check
-
     if "COLORTERM" in os.environ:
         return True
     if "truecolor" in os.environ["TERM"]:
