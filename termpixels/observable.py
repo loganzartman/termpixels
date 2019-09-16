@@ -1,15 +1,32 @@
 from collections import defaultdict
 from queue import Queue, Empty
 from threading import Thread, Lock
+import threading
+import time
 
 main_event_queue = Queue()
 
 class Event:
-    def __init__(self, source, name, args, kwargs):
+    def __init__(self, *, source, name, args=[], kwargs={}, track_dispatch=False):
+        """
+        source - the Observable that emitted this event
+        name - the event name
+        args - arbitrary positional arguments with which to invoke listeners
+        kwargs - arbitrary keyword arguments with which to invoke listeners
+        track_dispatch - whether to enable await_dispatched() functionality
+        """
         self.source = source
         self.name = name
         self.args = args
         self.kwargs = kwargs
+        self._dispatched = None
+        if track_dispatch:
+            self._dispatched = threading.Event()
+
+    def await_dispatched(self):
+        """Block until this Event is dispatched."""
+        assert self._dispatched is not None
+        self._dispatched.wait()
 
 class Observable:
     """A base class that implements a simple event emitter.
@@ -52,6 +69,59 @@ class Observable:
         def propagate(*args, **kwargs):
             self.emit(event_name, *args, **kwargs)
         source.listen(event_name, propagate)
+    
+    def create_interval(self, *args, **kwargs):
+        return Interval(*args, **kwargs, source=self)
+
+class Interval:
+    """Emits an event on a fixed interval."""
+
+    def __init__(self, event_name, interval, *, queue=main_event_queue, source, await_dispatched=True, args=[], kwargs={}):
+        """
+        interval - the time in seconds between event emits
+        queue - the queue to which the event will be enqueued
+        source - the Observable that will emit the event
+        await_dispatched - whether to wait for the emitted event to be dispatched before emitting another
+        args - args data to pass to event
+        kwargs - keyword args data to pass to event
+        """
+        self.event_name = event_name
+        self.interval = interval
+        self.queue = queue
+        self.source = source
+        self.args = args
+        self.kwargs = kwargs
+        self._await_dispatched = await_dispatched
+
+        self._cancelled = threading.Event()
+        thread_name = "Interval emitter for '{}' from 0x{:X}".format(event_name, id(source))
+        self._thread = threading.Thread(name=thread_name, target=self._main, daemon=True)
+    
+    def _sleep(self, seconds):
+        time.sleep(seconds)
+    
+    def _main(self):
+        event = None
+        while True:
+            self._sleep(self.interval)
+            if self._cancelled.is_set():
+                break
+            if event and self._await_dispatched:
+                event.await_dispatched()
+            event = Event(source=self.source, name=self.event_name, args=self.args, kwargs=self.kwargs, track_dispatch=self._await_dispatched)
+            self.queue.put(event)
+
+    def start(self):
+        """Start emitting the event, first waiting for the specified time to elapse.
+        
+        Return self.
+        """
+        self._thread.start()
+        return self
+
+    def cancel(self):
+        """Stop emitting the event."""
+        self._cancelled.set()
 
 def poll_events(queue=main_event_queue):
     """Immediately dispatch (invoke listeners for) all events in a queue."""
@@ -66,6 +136,7 @@ _is_polling = set()
 _is_polling_lock = Lock()
 def start_polling(queue=main_event_queue):
     """Create and start a daemon to continuously poll a queue.
+    Will not start a new daemon if one already exists for the given queue.
 
     If a daemon was started, returns True.
     If a daemon already exists for the given queue, returns False.
@@ -79,7 +150,7 @@ def start_polling(queue=main_event_queue):
         while True:
             event = queue.get()
             _dispatch_event(event)
-    thread = Thread(target=fn, daemon=True)
+    thread = Thread(name="Event loop for queue 0x{:X}".format(id(queue)), target=fn, daemon=True)
     thread.start()
     return True
 
@@ -87,3 +158,5 @@ def _dispatch_event(event):
     """Invoke all listeners with a given Event instance."""
     for l in event.source._listeners[event.name]:
         l(*event.args, **event.kwargs)
+    if event._dispatched is not None:
+        event._dispatched.set()
