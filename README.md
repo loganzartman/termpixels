@@ -23,6 +23,8 @@ There are lots of great libraries for coloring terminal output. This one is **de
 
 It's not the best solution for simply printing colored text, though [you can do that if you want][text coloring].
 
+Recently, it has come to my attention that some people use proportional fonts in their terminals. This library assumes that your terminal is displaying a monospaced font.
+
 ## Demo
 ![Demo gif](fun-text.gif)
 ```python
