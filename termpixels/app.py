@@ -8,24 +8,36 @@ pre-built instances as member variables:
     - screen: provides higher-level interface for printing text, filling areas,
               reading characters, etc.
 
-The App class is generally used by extending it and overriding special event
-handler methods to implement the application's business logic. An instance of
-the subclass is constructed, and then the start() method is called on it, e.g.
+The App class is used by instantiating it and then listening to its lifecycle
+events to implement business logic. The app can be launched by invoking its
+start() method. This method returns immediately, so in order to wait for the
+app to finish running, one should call the await_stop() method afterwards.
 
-Usage:
-    class MyApp(App):
-        def on_frame(self):
-            ...
-        ...
+Example:
+```
+from termpixels import App
+def main():
+    app = App()
 
-    if __name__ == "__main__":
-        MyApp().start()
+    @app.on("start")
+    def on_start():
+        app.screen.print("Hello world!")
+        app.screen.update()
+    
+    app.start()
+    app.await_stop()
+
+if __name__ == "__main__":
+    main()
+```
 """
 
 from time import sleep, perf_counter
+from threading import Event
 from termpixels.screen import Screen
 from termpixels.detector import detect_backend, detect_input
-from termpixels.observable import Observable, start_polling
+from termpixels.observable import Observable, start_polling, poll_events, Interval
+import termpixels.observable
 
 class App(Observable):
     def __init__(self, *, mouse=False, framerate=30):
@@ -41,15 +53,26 @@ class App(Observable):
         self.backend = detect_backend()
         self.input = detect_input()
         self.screen = Screen(self.backend, self.input)
+
         self.propagate_event(self.input, "key")
         self.propagate_event(self.input, "mouse")
-        def handle_resize(_):
+
+        @self.input.on("resize")
+        def handle_resize():
             self.backend.size_dirty = True
             self.emit("resize")
-        self.input.listen("resize", handle_resize)
+
+        self._stop_event = Event()
+        self._exit_event = Event()
+        self.listen("_start", self._on_start)
+        self.listen("_stop", self._on_stop)
+        self.listen("_exit", lambda: self._exit_event.set())
+
         self._framerate = framerate
         self._mouse = mouse
         self._stopping = False
+
+        self._frame_interval = self.create_interval("frame", 1/self._framerate)
 
     def start(self, *args, **kwargs):
         """Start collecting input and run the App's main loop.
@@ -59,34 +82,60 @@ class App(Observable):
 
         Forwards all arguments to the on_start() callback.
         """
+        start_polling()
+        self.t0 = perf_counter()
+        self.emit("_start", *args, **kwargs)
+    
+    def _do_stop(self):
+        """Perform the shutdown sequence.
+
+        This sequence of four events enables both the before_stop and 
+        after_stop events, which are fired before and after the terminal state
+        is restored, respectively.
+        """
+        self.emit("before_stop")
+        self.emit("_stop")
+        self.emit("after_stop")
+        self.emit("_exit")
+
+    def _on_start(self, *args, **kwargs):
+        self._stopping = False
+        self.backend.enter_alt_buffer()
+        # screen needs to be initialized with alternate buffer active or
+        # it will destroy user's screen contents
+        self.backend.clear_screen()
+        self.backend.application_keypad = True
+        if self._mouse:
+            self.backend.mouse_tracking = True
+        self.input.start()
+        self.backend.flush()
+        self._frame_interval.start()
+        self.emit("start", *args, **kwargs)
+    
+    def _on_frame(self):
+        if self._stopping:
+            self._frame_interval.cancel()
+            self._do_stop()
+
+    def _on_stop(self):
+        self.backend.application_keypad = False
+        self.backend.mouse_tracking = False
+        self.input.stop()
+        self.screen.show_cursor = True
+        self.screen.update()
+        self.backend.flush()
+        self.backend.exit_alt_buffer()
+        self._stop_event.set()
+
+    def await_stop(self):
         try:
-            start_polling()
-            self._stopping = False
-            self.backend.enter_alt_buffer()
-            # screen needs to be initialized with alternate buffer active or
-            # it will destroy user's screen contents
-            self.backend.clear_screen()
-            self.backend.application_keypad = True
-            if self._mouse:
-                self.backend.mouse_tracking = True
-            self.input.start()
-            self.emit("start", *args, **kwargs)
-            self.backend.flush()
-            while not self._stopping:
-                t0 = perf_counter()
-                self.emit("frame")
-                dt = perf_counter() - t0
-                sleep(max(1/500, 1/self._framerate - dt))
+            self._stop_event.wait()
         except KeyboardInterrupt:
             pass
         finally:
-            self.backend.application_keypad = False
-            self.backend.mouse_tracking = False
-            self.input.stop()
-            self.screen.show_cursor = True
-            self.screen.update()
-            self.backend.exit_alt_buffer()
-            self.emit("stop")
+            self._do_stop()
+            poll_events()
+            self._exit_event.wait()
 
     def stop(self):
         """Tell the application to stop running gracefully."""
