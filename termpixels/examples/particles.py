@@ -57,6 +57,7 @@ def main():
         app.mouse_py = app.mouse_y
 
     app.start()
+    app.await_stop()
 
 if __name__ == "__main__":
     main()

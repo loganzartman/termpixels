@@ -2,25 +2,29 @@ from termpixels import App, Color, Buffer
 from math import sin, cos
 from time import time
 
-class BufferBlitApp(App):
-    def __init__(self):
-        super().__init__(framerate=60)
+def main():
+    app = App(framerate=60)
 
-    def on_start(self):
-        self.buffer = Buffer(16,4)
-        self.buffer.clear(bg=Color.rgb(1,0,0))
-        self.buffer.print("Hello world")
+    @app.on("start")
+    def on_start():
+        app.buffer = Buffer(16,4)
+        app.buffer.clear(bg=Color.rgb(0.2,0,0), fg=Color.rgb(1,0.5,0.5))
+        app.buffer.print("Hello world")
 
-    def on_frame(self):
+    @app.on("frame")
+    def on_frame():
         t = time()
-        self.screen.clear()
-        self.screen.blit(
-            self.buffer, 
-            round(self.screen.w / 2 + sin(t * 7) * 16),
-            round(self.screen.h / 2 + cos(t * 4) * 4)
+        app.screen.clear()
+        app.screen.blit(
+            app.buffer, 
+            round(app.screen.w / 2 + sin(t * 3) * 16) - app.buffer.w // 2,
+            round(app.screen.h / 2 + cos(t * 1) * 4) - app.buffer.h // 2
         )
-        self.screen.print("Update time: {:.2f}ms".format(self.screen._update_duration*1000), 0, 0)
-        self.screen.update()
+        app.screen.print("Update time: {:.2f}ms".format(app.screen._update_duration*1000), 0, 0)
+        app.screen.update()
+
+    app.start()
+    app.await_stop()        
 
 if __name__ == "__main__":
-    BufferBlitApp().start()
+    main()
