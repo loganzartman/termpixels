@@ -27,14 +27,15 @@ class Screen(Buffer):
     def __init__(self, backend, input):
         self.backend = backend
         super().__init__(backend.size[0], backend.size[1])
-        input.listen("resize", lambda _: self.resize(backend.size[0], backend.size[1]))    
+        input.listen("resize", lambda: self.resize(backend.size[0], backend.size[1]))    
         self.show_cursor = False 
+        self._update_count = 0
+        self._update_duration = 0
 
     def resize(self, *args, **kwargs):
         super().resize(*args, **kwargs)
         self._pixels_cache = [[PixelData(fg=None, bg=None, char=" ") 
                                for y in range(self.h)] for x in range(self.w)]
-        self.update()
 
     @property
     def show_cursor(self):
