@@ -6,4 +6,4 @@ from termpixels.buffer import Buffer
 from termpixels.pixeldata import PixelData
 
 name = "termpixels"
-__version__ = "0.0.11"
+__version__ = "1.0.0b1"

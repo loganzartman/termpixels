@@ -156,7 +156,7 @@ def start_polling(queue=main_event_queue):
 
 def _dispatch_event(event):
     """Invoke all listeners with a given Event instance."""
-    for l in event.source._listeners[event.name]:
-        l(*event.args, **event.kwargs)
+    for listener in event.source._listeners[event.name]:
+        listener(*event.args, **event.kwargs)
     if event._dispatched is not None:
         event._dispatched.set()

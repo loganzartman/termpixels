@@ -66,6 +66,14 @@ class Buffer:
             if y >= self.h or y < 0:
                 raise Exception("y position {} out of bounds".format(y))
             return self._pixels[x][y]
+    
+    def __getitem__(self, xy):
+        x, y = xy
+        return self.at(x, y)
+
+    def __setitem__(self, xy, val):
+        x, y = xy
+        self.at(x, y).set(val)
 
     def fill(self, x, y, w, h, *, fg=None, bg=None, char=None):
         """Fill a rectangular region of the screen with the given attributes.
