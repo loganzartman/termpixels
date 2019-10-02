@@ -18,12 +18,14 @@ def main():
         app.screen.print("Frame {}".format(frame_num), 0, 1)
         app.screen.update()
         frame_num += 1
+        if frame_num > 10:
+            app.stop()
     
     @app.on("before_stop")
     def on_before_stop():
         app.screen.print("Before stop", 0, 2)
         app.screen.update()
-        raise Exception("Damn")
+        sleep(0.5)
     
     @app.on("after_stop")
     def on_after_stop():
@@ -32,6 +34,7 @@ def main():
     
     app.start()
     app.await_stop()
+    print("Exited")
 
 if __name__ == "__main__":
     main()
