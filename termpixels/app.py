@@ -86,18 +86,6 @@ class App(Observable):
         self.t0 = perf_counter()
         self.emit("_start", *args, **kwargs)
     
-    def _do_stop(self):
-        """Perform the shutdown sequence.
-
-        This sequence of four events enables both the before_stop and 
-        after_stop events, which are fired before and after the terminal state
-        is restored, respectively.
-        """
-        self.emit("before_stop")
-        self.emit("_stop")
-        self.emit("after_stop")
-        self.emit("_exit")
-
     def _on_start(self, *args, **kwargs):
         self._stopping = False
         self.backend.enter_alt_buffer()
@@ -113,12 +101,8 @@ class App(Observable):
         self._frame_interval.start()
         self.emit("start", *args, **kwargs)
     
-    def _on_frame(self):
-        if self._stopping:
-            self._frame_interval.cancel()
-            self._do_stop()
-
     def _on_stop(self):
+        self._frame_interval.cancel()
         self.backend.application_keypad = False
         self.backend.mouse_tracking = False
         self.input.stop()
@@ -126,6 +110,7 @@ class App(Observable):
         self.screen.update()
         self.backend.flush()
         self.backend.exit_alt_buffer()
+        self.backend.flush()
         self._stop_event.set()
 
     def await_stop(self):
@@ -134,10 +119,18 @@ class App(Observable):
         except KeyboardInterrupt:
             pass
         finally:
-            self._do_stop()
+            self.stop()
             poll_events()
             self._exit_event.wait()
 
     def stop(self):
         """Tell the application to stop running gracefully."""
-        self._stopping = True
+        # This sequence of four events enables both the before_stop and 
+        # after_stop events, which are fired before and after the terminal state
+        # is restored, respectively.
+        if not self._stopping:
+            self._stopping = True
+            self.emit("before_stop")
+            self.emit("_stop")
+            self.emit("after_stop")
+            self.emit("_exit")
