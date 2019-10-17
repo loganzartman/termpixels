@@ -96,7 +96,7 @@ class App(Observable):
         if self._mouse:
             self.backend.mouse_tracking = True
         self.input.start()
-        self.screen.clear()
+        self.screen.show_cursor = False
         self.backend.flush()
         self._frame_interval.start()
         self.emit("start", *args, **kwargs)

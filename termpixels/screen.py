@@ -28,7 +28,6 @@ class Screen(Buffer):
         self.backend = backend
         super().__init__(backend.size[0], backend.size[1])
         input.listen("resize", lambda: self.resize(backend.size[0], backend.size[1]))    
-        self.show_cursor = False 
         self._update_count = 0
         self._update_duration = 0
 
