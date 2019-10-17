@@ -195,7 +195,11 @@ class UnixInput(Observable):
     def __init__(self):
         super().__init__()
         self._old_attr = None
-        self._fd_in = sys.stdin.fileno()
+
+        # open /dev/tty rather than using stdin in case it is e.g. a pipe
+        # also ensures that stdin state is not corrupted if we crash
+        self._fd_in = os.open("/dev/tty", os.O_RDONLY)
+
         self._cbreak = False
         self._ti = Terminfo()
         self._key_parser = make_key_parser(self._ti)
@@ -232,7 +236,8 @@ class UnixInput(Observable):
     def collector_func(self):
         while not self._has_exited:
             self._stdin_selector.select()
-            data = sys.stdin.read(-1)
+            # always decoding as UTF-8 is not strictly correct but simplifies design
+            data = bytes(os.read(self._fd_in, 2048)).decode("utf-8")
             for ch in data:
                 self._input_queue.put(ch)
     
@@ -301,8 +306,11 @@ class UnixInput(Observable):
         with self._has_exited_lock:
             if self._has_exited:
                 raise RuntimeError("Input already stopped.")
+
+            # should not be necessary since we (re)open /dev/tty
             set_fd_nonblocking(self._fd_in, False)
             self.set_cbreak(False)
+
             self._has_exited = True
 
 def set_fd_nonblocking(fd, is_nonblocking):
