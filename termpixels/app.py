@@ -88,10 +88,11 @@ class App(Observable):
     
     def _on_start(self, *args, **kwargs):
         self._stopping = False
+        
         self.backend.enter_alt_buffer()
         # screen needs to be initialized with alternate buffer active or
         # it will destroy user's screen contents
-        self.backend.clear_screen()
+        
         self.backend.application_keypad = True
         if self._mouse:
             self.backend.mouse_tracking = True
@@ -104,6 +105,7 @@ class App(Observable):
         self.input.start()
         self.screen.show_cursor = False
         self.backend.flush()
+
         self._frame_interval.start()
         self.emit("start", *args, **kwargs)
     
