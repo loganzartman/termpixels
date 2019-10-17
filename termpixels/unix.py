@@ -161,6 +161,16 @@ class UnixBackend(Observable):
             self.write_escape(self._ti.parameterize("fsl", require=True)) # back from status line
             self._window_title = title
     
+    def set_charset_utf8(self, utf8=True):
+        """ try to switch the character set to UTF-8, or to default.
+        Relies on hardcoded xterm control sequences.
+        """
+
+        if utf8:
+            self.write_escape("\x1b%G")
+        else:
+            self.write_escape("\x1b%@")
+    
     def enter_alt_buffer(self):
         self.write_escape(self._ti.parameterize("smcup"))
     

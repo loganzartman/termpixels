@@ -95,6 +95,12 @@ class App(Observable):
         self.backend.application_keypad = True
         if self._mouse:
             self.backend.mouse_tracking = True
+        
+        if self.backend.set_charset_utf8:
+            self.backend.set_charset_utf8(True)
+
+        self.backend.flush()
+        
         self.input.start()
         self.screen.show_cursor = False
         self.backend.flush()
@@ -108,6 +114,7 @@ class App(Observable):
         self.input.stop()
         self.screen.show_cursor = True
         self.screen.update()
+        self.backend.set_charset_utf8(False)
         self.backend.flush()
         self.backend.exit_alt_buffer()
         self.backend.flush()
