@@ -53,6 +53,16 @@ class UnixBackend(Observable):
         self._size = None
         self._window_title = None
 
+        # allow output to be redirected to a file, but make sure that a TTY 
+        # output is available for ioctl and termios operations.
+        self._fd_out = sys.stdout.fileno()
+        if os.isatty(self._fd_out):
+            self._fd_out_tty = self._fd_out
+        else:
+            self._fd_out_tty = os.open("/dev/tty", os.O_WRONLY)
+
+        self._out_buffer = bytearray()
+        
     @property
     def terminal_name(self):
         return self._ti.termname
@@ -64,7 +74,7 @@ class UnixBackend(Observable):
         return self._size
     
     def update_size(self):
-        result = fcntl.ioctl(sys.stdout, termios.TIOCGWINSZ, struct.pack("HHHH", 0, 0, 0, 0))
+        result = fcntl.ioctl(self._fd_out_tty, termios.TIOCGWINSZ, struct.pack("HHHH", 0, 0, 0, 0))
         r, c, _, _ = struct.unpack("HHHH", result)
         self._size = (c, r) 
         self.size_dirty = False
@@ -167,23 +177,19 @@ class UnixBackend(Observable):
         self.cursor_pos = (0, 0)
         self.write_escape("\x1b[2J")
     
-    def write_escape(self, binary):
-        if type(binary) == str:
-            sys.stdout.write(binary)
-        else:
-            sys.stdout.write(binary.decode("ascii"))
+    def write_escape(self, string):
+        if type(string) == str:
+            string = string.encode("utf-8")
+        self._out_buffer.extend(string)
 
     def write(self, text):
-        sys.stdout.write(text)
+        self._out_buffer.extend(text.encode("utf-8"))
         self._cursor_pos = (self._cursor_pos[0] + terminal_len(text), self._cursor_pos[1])
 
     def flush(self):
-        while True:
-            try:
-                sys.stdout.flush()
-                break
-            except BlockingIOError:
-                pass
+        os.write(self._fd_out, self._out_buffer)
+        self._out_buffer.clear()
+        termios.tcdrain(self._fd_out_tty)
 
 class UnixInput(Observable):
     def __init__(self):
