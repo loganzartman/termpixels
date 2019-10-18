@@ -108,6 +108,9 @@ class Color:
 
     def __rmul__(self, other):
         return self * other
+
+    def __str__(self):
+        return repr(self)
     
     def __repr__(self):
         return "Color(r={}, g={}, b={})".format(self.r, self.g, self.b)

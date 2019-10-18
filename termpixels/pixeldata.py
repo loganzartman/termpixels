@@ -55,7 +55,10 @@ class PixelData:
         self._hash = None
 
     def __str__(self):
-        return "({}; fg {}; bg {})".format(self.char, self.fg, self.bg)
+        return repr(self)
+
+    def __repr__(self):
+        return "PixelData(char={}, fg={}, bg={})".format(repr(self.char), repr(self.fg), repr(self.bg))
     
     def __eq__(self, other):
         if hash(self) != hash(other):
