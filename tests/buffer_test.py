@@ -109,6 +109,13 @@ def test_print_newline_position():
     assert buffer.at(1, 1).char == "X"
     assert buffer.at(1, 2).char == "Y"
 
+def test_print_newline_line_start():
+    buffer = Buffer(3, 3)
+    buffer.print("X\nY", 1, 1, line_start=0)
+    assert buffer.at(1, 1).char == "X"
+    assert buffer.at(1, 2).char == " "
+    assert buffer.at(0, 2).char == "Y"
+
 def test_print_fullwidth_spacing():
     buffer = Buffer(4, 1)
     buffer.print("你好", 0, 0)

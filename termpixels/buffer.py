@@ -142,14 +142,15 @@ class Buffer:
                     continue
                 self._pixels[dst_x][dst_y].set(buffer._pixels[src_x][src_y])
     
-    def print(self, text, x=None, y=None, *, fg=None, bg=None):
+    def print(self, text, x=None, y=None, *, line_start=None, fg=None, bg=None):
         """Print a string of text starting at a particular location.
 
         Prints a string of one or more lines of text starting at the given
         location, ignoring text that falls outside the bounds of the buffer.
         Newlines can be used to move the cursor down a line and back to the
         initial x position. The cursor is NOT necessarily moved all the way
-        to the left of the screen.
+        to the left of the screen. To set the x position to which the cursor
+        returns after a newline, provide the line_start keyword argument.
         
         Returns the location of the cursor after the text has been printed.
         
@@ -164,16 +165,18 @@ class Buffer:
         using print().
         """
         with self.lock:
-            if x == None:
+            if x is None:
                 x = self.print_pos[0]
-            if y == None:
+            if y is None:
                 y = self.print_pos[1]
+            if line_start is None:
+                line_start = x
 
             y0 = y
-            tab = x
+            x0 = x
             for linenum, line in enumerate(splitlines_print(text)):
                 y = y0 + linenum
-                x = tab
+                x = x0 if linenum == 0 else line_start
                 for ch in line:
                     if y < 0 or x < 0 or y >= self.h or x >= self.w:
                         continue
