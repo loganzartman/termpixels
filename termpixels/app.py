@@ -74,6 +74,10 @@ class App(Observable):
 
         self._frame_interval = self.create_interval("frame", 1/self._framerate)
 
+    def run(self, *args, **kwargs):
+        self.start(*args, **kwargs)
+        self.await_stop()
+
     def start(self, *args, **kwargs):
         """Start collecting input and run the App's main loop.
         
@@ -143,3 +147,32 @@ class App(Observable):
             self.emit("_stop")
             self.emit("after_stop")
             self.emit("_exit")
+
+class LegacyApp(App):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.listen("start", self.on_start)
+        self.listen("frame", self.on_frame)
+        self.listen("key", self.on_key)
+        self.listen("mouse", self.on_mouse)
+        self.listen("before_stop", self.on_before_stop)
+        self.listen("after_stop", self.on_after_stop)
+    
+    def on_start(self, *args, **kwargs):
+        pass
+
+    def on_frame(self):
+        pass
+
+    def on_key(self, k):
+        pass
+
+    def on_mouse(self, m):
+        pass
+
+    def on_before_stop(self):
+        pass
+
+    def on_after_stop(self):
+        pass
+
