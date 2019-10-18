@@ -44,7 +44,7 @@ class UnixBackend(Observable):
         super().__init__()
         self._ti = Terminfo()
         self.color_mode = detect_color_mode(self._ti)
-        self._cursor_pos = (0, 0)
+        self._cursor_pos = None
         self._fg = None
         self._bg = None
         self._show_cursor = None
