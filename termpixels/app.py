@@ -101,8 +101,10 @@ class App(Observable):
         if self._mouse:
             self.backend.mouse_tracking = True
         
-        if self.backend.set_charset_utf8:
+        try:
             self.backend.set_charset_utf8(True)
+        except AttributeError:
+            pass
 
         self.backend.flush()
         

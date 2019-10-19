@@ -12,14 +12,6 @@ from termpixels.win32_keys import vk_to_key
 from termpixels.util import terminal_len
 from time import sleep
 
-def detect_win10_console():
-    """Check whether new console features are supported"""
-    try:
-        build = platform.version().split(".")[2]
-        return int(build) >= 10586
-    except:
-        return False
-
 # Windows types
 WORD = ctypes.c_ushort
 DWORD = ctypes.c_uint
@@ -210,8 +202,6 @@ class Win32Backend(Observable):
         self._attr = WORD(0)
 
         self._termname = "Windows Console"
-        if detect_win10_console():
-            self._termname = "Windows Console (Win10)"
     
     @property
     def terminal_name(self):
@@ -344,10 +334,11 @@ class Win32Backend(Observable):
             byref(lpWriteRegion)
         )
         # position cursor for aesthetic purposes
-        windll.kernel32.SetConsoleCursorPosition(
-            self._out_buffer,
-            COORD(self._cursor_pos[0], self._cursor_pos[1])
-        )
+        if self._cursor_pos is not None:
+            windll.kernel32.SetConsoleCursorPosition(
+                self._out_buffer,
+                COORD(self._cursor_pos[0], self._cursor_pos[1])
+            )
 
 
 class Win32Input(Observable):

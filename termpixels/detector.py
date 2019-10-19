@@ -4,8 +4,13 @@ def detect_backend():
         from termpixels.unix import UnixBackend
         return UnixBackend()
     except:
-        from termpixels.win32 import Win32Backend
-        return Win32Backend()
+        try:
+            from termpixels.win32_vt import Win32VtBackend
+            return Win32VtBackend()
+        except Exception as e:
+            raise e
+            from termpixels.win32 import Win32Backend
+            return Win32Backend()
 
 def detect_input():
     """Try to construct an appropriate input implementation for this platform."""
