@@ -307,7 +307,7 @@ class UnixInput(Observable):
                 raise RuntimeError("Input already started.")
             self._has_exited = False
             self.set_cbreak(True)
-            set_fd_nonblocking(self._fd_in, True)
+            os.set_blocking(self._fd_in, False)
             self._collector.start()
             self._grouper.start()
             self._sigwinch_consumer.start()
@@ -318,16 +318,7 @@ class UnixInput(Observable):
                 raise RuntimeError("Input already stopped.")
 
             # should not be necessary since we (re)open /dev/tty
-            set_fd_nonblocking(self._fd_in, False)
+            os.set_blocking(self._fd_in, True)
             self.set_cbreak(False)
 
             self._has_exited = True
-
-def set_fd_nonblocking(fd, is_nonblocking):
-    """ set the NONBLOCK flag on a file descriptor, preserving other flags. """
-    flags = fcntl.fcntl(fd, fcntl.F_GETFL)
-    if is_nonblocking:
-        flags |= os.O_NONBLOCK
-    else:
-        flags &= ~os.O_NONBLOCK
-    fcntl.fcntl(fd, fcntl.F_SETFL, flags)
