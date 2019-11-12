@@ -1,3 +1,4 @@
+from termpixels.util import corners_to_box
 from termpixels.util import set_ambiguous_is_wide
 from termpixels.util import terminal_char_len
 from termpixels.util import terminal_len
@@ -15,6 +16,13 @@ ambiguous_char = "§"
 assert east_asian_width(narrow_char) == "Na"
 assert east_asian_width(wide_char) == "W"
 assert east_asian_width(ambiguous_char) == "A"
+
+def test_corners_to_box():
+    assert corners_to_box(0, 0, 0, 0) == (0, 0, 1, 1)
+    assert corners_to_box(0, 0, 1, 1) == (0, 0, 2, 2)
+    assert corners_to_box(1, 1, 0, 0) == (0, 0, 2, 2)
+    assert corners_to_box(5, 6, 7, 8) == (5, 6, 3, 3)
+    assert corners_to_box(3, 3, -3, -3) == (-3, -3, 7, 7)
 
 def test_terminal_char_len_narrow():
     assert terminal_char_len(narrow_char) == 1

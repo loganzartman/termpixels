@@ -2,6 +2,12 @@ from unicodedata import east_asian_width, category
 from functools import lru_cache
 import re
 
+def corners_to_box(x0, y0, x1, y1):
+    """convert two corners (x0, y0, x1, y1) to (x, y, width, height)"""
+    x0, x1 = min(x0, x1), max(x0, x1)
+    y0, y1 = min(y0, y1), max(y0, y1)
+    return x0, y0, x1 - x0 + 1, y1 - y0 + 1
+
 # not sure how to determine how ambiguous characters will be rendered
 _ambiguous_is_wide = False
 def set_ambiguous_is_wide(is_wide):
