@@ -10,13 +10,45 @@ _BOX_TR = 5
 _BOX_BL = 6
 _BOX_BR = 7
 
+BOX_CHARS_ASCII = "--||++++"
 BOX_CHARS_LIGHT = "──││┌┐└┘"
+BOX_CHARS_LIGHT_ARC = "──││╭╮╰╯"
 BOX_CHARS_HEAVY = "━━┃┃┏┓┗┛"
 BOX_CHARS_DOUBLE = "══║║╔╗╚╝"
 BOX_CHARS_LIGHT_DOUBLE_TOP = "═─││╒╕└┘"
 
-SPINNER_SIX = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
-SPINNER_PIPE = ["-", "\\", "|", "/"]
+SPINNER_SIX = "⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏"
+SPINNER_PIPE = "-\\|/"
+SPINNER_BAR = ["[    ]",
+               "[=   ]",
+               "[==  ]",
+               "[=== ]",
+               "[ ===]",
+               "[  ==]",
+               "[   =]",
+               "[    ]",
+               "[   =]",
+               "[  ==]",
+               "[ ===]",
+               "[=== ]",
+               "[==  ]",
+               "[=   ]"]
+SPINNER_DOTS = ["   ",
+                ".  ",
+                ".. ",
+                "...",
+                " ..",
+                "  ."]
+SPINNER_MOON = "🌑🌒🌓🌔🌕🌖🌗🌘"
+SPINNER_CLOCK = "🕛🕐🕑🕒🕓🕔🕕🕖🕗🕘🕙🕚"
+SPINNER_BOX = "▖▘▝▗"
+
+PROGRESS_SMOOTH = {
+    "start": "",
+    "end": "",
+    "bar_char": "█",
+    "head_chars": " ▏▎▍▌▋▊"
+}
 
 def draw_hline(buffer, y, char="─", **kwargs):
     """Draw a horizontal line along the given y coordinate.
