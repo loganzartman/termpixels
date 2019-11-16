@@ -30,19 +30,29 @@ def draw_vline(buffer, x, char="│", **kwargs):
     for y in range(buffer.h):
         buffer.print(char, x, y, **kwargs)
 
-def draw_box(buffer, x, y, w, h, chars=BOX_CHARS_LIGHT):
+def draw_box(buffer, x, y, w, h, chars=BOX_CHARS_LIGHT, **kwargs):
     """Draw a box using a set of box-drawing characters.
+
+    w and h must be positive (greater than zero) integers, or nothing is drawn.
+
+    If either dimension is 1, a line is drawn instead of a box.
+    If both dimensions are 1, nothing is drawn.
     """
-    for px, char_id in ((x, _BOX_L), (x + w - 1, _BOX_R)):
-        for py in range(y, y + h):
-            buffer.print(chars[char_id], px, py)
-    for py, char_id in ((y, _BOX_T), (y + h - 1, _BOX_B)):
-        for px in range(x, x + w):
-            buffer.print(chars[char_id], px, py)
-    buffer.print(chars[_BOX_TL], x, y)
-    buffer.print(chars[_BOX_TR], x + w - 1, y)
-    buffer.print(chars[_BOX_BL], x, y + h -1)
-    buffer.print(chars[_BOX_BR], x + w - 1, y + h - 1)
+    if w < 1 or h < 1:
+        return
+    if h > 1:
+        for px, char_id in ((max(0, x + w - 1), _BOX_R), (x, _BOX_L)):
+            for py in range(y, y + h):
+                buffer.print(chars[char_id], px, py, **kwargs)
+    if w > 1:
+        for py, char_id in ((max(0, y + h - 1), _BOX_B), (y, _BOX_T)):
+            for px in range(x, x + w):
+                buffer.print(chars[char_id], px, py, **kwargs)
+    if w > 1 and h > 1:
+        buffer.print(chars[_BOX_TL], x, y, **kwargs)
+        buffer.print(chars[_BOX_TR], x + w - 1, y, **kwargs)
+        buffer.print(chars[_BOX_BL], x, y + h -1, **kwargs)
+        buffer.print(chars[_BOX_BR], x + w - 1, y + h - 1, **kwargs)
 
 def draw_spinner(buffer, x, y, *, freq=1, t=None, frames=SPINNER_SIX, **kwargs):
     """Print a repeating animation.
