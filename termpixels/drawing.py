@@ -69,6 +69,43 @@ def draw_spinner(buffer, x, y, *, freq=1, t=None, frames=SPINNER_SIX, **kwargs):
     frame = int(f * len(frames))
     buffer.print(frames[frame], x, y, **kwargs)
 
+def draw_progress(buffer, x, y, *, w, progress, start="[", end="]", bar_char="=", empty_char=" ", head_chars=">", fg=None, bg=None):
+    """Draw a horizontal, left-to-right progress bar.
+
+    w -- the total width of the progress bar, including start and end strings
+    progress -- the progress in the range [0, 1]
+    start -- a string to display at the left of the progress bar
+    end -- a string to display at the right of the progress bar
+    bar_char -- a character with which to fill the completed portion of the bar
+    empty_char -- a character with which to fill the remaining portion of the bar
+    head_chars -- a sequence of characters to display at the "head" of the bar,
+                  where the sequence is indexed based on what fraction of the
+                  head character should be filled.
+    fg -- foreground color (default None to preserve)
+    bg -- background color (default None to preserve)
+    """
+
+    if len(bar_char) != 1:
+        raise ValueError("bar_char must have length 1")
+    if len(empty_char) != 1:
+        raise ValueError("empty_char must have length 1")
+    
+    bar_space = w - len(start) - len(end)
+    if bar_space < 0:
+        return
+    progress = min(1, max(0, progress))
+    bar_filled_chars = int(progress * bar_space)
+
+    buffer.fill(x, y, w, 1, fg=fg, bg=bg)
+    buffer.print(start, x, y)
+    buffer.print(bar_char * bar_filled_chars)
+    if bar_filled_chars < bar_space:
+        f = progress * bar_space - bar_filled_chars
+        head_char = head_chars[int(f * len(head_chars))]
+        buffer.print(head_char)
+    buffer.print(empty_char * (bar_space - bar_filled_chars - 1))
+    buffer.print(end)
+
 def draw_colormap(buffer, colormap, x, y, *, w, h, char="█"):
     """Draw a color bitmap where each color is represented as one character cell.
 
