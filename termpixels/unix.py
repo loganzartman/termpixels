@@ -40,7 +40,7 @@ def detect_color_mode(terminfo=None):
     return "monochrome"
 
 class UnixBackend(Observable):
-    def __init__(self):
+    def __init__(self, *, stdout=None):
         super().__init__()
         self._ti = Terminfo()
         self.color_mode = detect_color_mode(self._ti)
@@ -55,7 +55,7 @@ class UnixBackend(Observable):
 
         # allow output to be redirected to a file, but make sure that a TTY 
         # output is available for ioctl and termios operations.
-        self._fd_out = sys.stdout.fileno()
+        self._fd_out = stdout if stdout is not None else sys.stdout.fileno()
         if os.isatty(self._fd_out):
             self._fd_out_tty = self._fd_out
         else:
@@ -194,7 +194,8 @@ class UnixBackend(Observable):
 
     def write(self, text):
         self._out_buffer.extend(text.encode("utf-8"))
-        self._cursor_pos = (self._cursor_pos[0] + terminal_len(text), self._cursor_pos[1])
+        if self._cursor_pos is not None:
+            self._cursor_pos = (self.cursor_pos[0] + terminal_len(text), self.cursor_pos[1])
 
     def flush(self):
         os.write(self._fd_out, self._out_buffer)
