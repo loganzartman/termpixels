@@ -119,6 +119,11 @@ class Buffer:
         the same signature, but with the "buffer" argument being the 
         destination rather than the source buffer.
         """
+        if not isinstance(buffer, Buffer):
+            if hasattr(buffer, "blit_to") and callable(buffer.blit_to):
+                return buffer.blit_to(self, x=x, y=y, x0=x0, y0=y0, x1=x1, y1=y1)
+            raise ValueError("buffer must be a Buffer instance or have a blit_to() method.")
+
         if x1 == None:
             x1 = buffer.w
         if y1 == None:
@@ -126,11 +131,6 @@ class Buffer:
         
         x0, x1 = (min(x0, x1), max(x0, x1))
         y0, y1 = (min(y0, y1), max(y0, y1))
-
-        if not isinstance(buffer, Buffer):
-            if hasattr(buffer, "blit_to") and callable(buffer.blit_to):
-                return buffer.blit_to(self, x=x, y=y, x0=x0, y0=y0, x1=x1, y1=y1)
-            raise ValueError("buffer must be a Buffer instance or have a blit_to() method.")
         
         for dx in range(min(x1-x0+1, self.w)):
             for dy in range(min(y1-y0+1, self.h)):
