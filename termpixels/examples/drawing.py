@@ -1,12 +1,14 @@
 import math
 import time
 from termpixels import App, Color, Buffer
-from termpixels.drawing import draw_box, draw_hline, draw_spinner, draw_colormap, draw_colormap_2x
-from termpixels.drawing import BOX_CHARS_LIGHT_DOUBLE_TOP, SPINNER_PIPE
+from termpixels.drawing import draw_box, draw_hline, draw_spinner, draw_progress, draw_colormap, draw_colormap_2x
+from termpixels.drawing import BOX_CHARS_LIGHT_DOUBLE_TOP, SPINNER_PIPE, SPINNER_MOON, SPINNER_BAR, SPINNER_CLOCK, SPINNER_DOTS, PROGRESS_SMOOTH
 from termpixels.util import wrap_text
 
+WHITE = Color.rgb(1, 1, 1)
 GREY = Color.rgb(0.5, 0.5, 0.5)
 YELLOW = Color.rgb(0.5, 0.5, 0)
+BRIGHT_YELLOW = Color.rgb(1, 1, 0)
 GREEN = Color.rgb(0, 0.5, 0)
 
 LIPSUM = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed nec erat quis turpis ultrices eleifend id et urna. Praesent ultricies orci fermentum, placerat eros id, scelerisque mi. Aenean lobortis pellentesque diam, vel auctor felis semper in. Aliquam cursus diam sit amet lorem faucibus, eget sagittis eros bibendum. Maecenas dignissim libero."
@@ -55,13 +57,25 @@ def main():
         inner_buffer.print(" ")
         draw_spinner(inner_buffer, *inner_buffer.print_pos, freq=2, fg=GREY, frames=SPINNER_PIPE)
         inner_buffer.print(" ")
-        draw_spinner(inner_buffer, *inner_buffer.print_pos, freq=2, t=math.sin(time.perf_counter()), fg=YELLOW)
+        draw_spinner(inner_buffer, *inner_buffer.print_pos, freq=2, fg=GREY, frames=SPINNER_CLOCK)
+        inner_buffer.print(" ")
+        draw_spinner(inner_buffer, *inner_buffer.print_pos, freq=2, t=math.sin(time.perf_counter()), fg=YELLOW, frames=SPINNER_MOON)
+        inner_buffer.print(" ")
+        draw_spinner(inner_buffer, *inner_buffer.print_pos, freq=1, fg=WHITE, frames=SPINNER_DOTS)
 
         # draw a horizontal line along x=2 within the box
         draw_hline(inner_buffer, 2, fg=GREY)
 
         # print some word-wrapped text inside the box
         inner_buffer.print(wrap_text(LIPSUM, inner_w), 0, 3, fg=YELLOW)
+
+        # progress bar
+        draw_progress(inner_buffer, 0, inner_buffer.print_pos[1] + 2,
+                      w=inner_buffer.w // 3,
+                      progress=math.sin(time.perf_counter()) * 0.5 + 0.5,
+                      fg=BRIGHT_YELLOW,
+                      bg=GREY,
+                      **PROGRESS_SMOOTH)
 
         # draw a color bitmap at 2x vertical resolution
         draw_colormap_2x(inner_buffer, SMILEY, 2, inner_buffer.h - 3 - 2, w=7, h=7)
