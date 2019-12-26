@@ -1,8 +1,9 @@
 import pytest
-from unittest.mock import Mock
-from types import SimpleNamespace
 from termpixels.buffer import Buffer
 from termpixels.buffer import PixelData
+from types import SimpleNamespace
+from unittest.mock import Mock
+from utils import assert_buffer_matches
 
 def print_buffer(buffer):
     for y in range(buffer.h):
@@ -84,6 +85,22 @@ def test_print_oob():
     buffer = Buffer(1, 1)
     buffer.print("Hello", 0, 0)
     assert buffer.at(0, 0).char == "H"
+
+def test_print_oob_left():
+    buffer = Buffer(3, 1)
+    buffer.print("Hello", -2, 0)
+    assert_buffer_matches(
+        buffer,
+        "llo"
+    )
+
+def test_print_oob_left_wide():
+    buffer = Buffer(10, 1)
+    buffer.print("你好，世界", -1, 0)
+    assert_buffer_matches(
+        buffer,
+        " 好 ， 世 界  " # extra spaces are shadowed by two-wide chars in terminal
+    )
 
 def test_print_no_position():
     buffer = Buffer(2, 1)

@@ -178,25 +178,24 @@ class Buffer:
                 y = y0 + linenum
                 x = x0 if linenum == 0 else line_start
                 for ch in line:
-                    if y < 0 or x < 0 or y >= self.h or x >= self.w:
-                        continue
                     ch_len = terminal_char_len(ch)
-                    pixel = self._pixels[x][y]
-                    pixel.char = ch
-                    if fg:
-                        pixel.fg = fg
-                    if bg:
-                        pixel.bg = bg
-                    
-                    # handle fullwidth (double-wide) characters
-                    if ch_len > 1 and x < self.w - 1:
-                        shadowed = self._pixels[x+1][y]
-                        shadowed.char = " "
+                    if x >= 0 and y >= 0 and x < self.w and y < self.h:
+                        pixel = self._pixels[x][y]
+                        pixel.char = ch
                         if fg:
-                            shadowed.fg = fg
+                            pixel.fg = fg
                         if bg:
-                            shadowed.bg = bg
-
+                            pixel.bg = bg
+                        
+                        # handle fullwidth (double-wide) characters
+                        if ch_len > 1 and x < self.w - 1:
+                            shadowed = self._pixels[x+1][y]
+                            shadowed.char = " "
+                            if fg:
+                                shadowed.fg = fg
+                            if bg:
+                                shadowed.bg = bg
                     x += ch_len
+        
         self.print_pos = (x, y)
         return self.print_pos
