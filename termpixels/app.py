@@ -11,7 +11,8 @@ pre-built instances as member variables:
 The App class is used by instantiating it and then listening to its lifecycle
 events to implement business logic. The app can be launched by invoking its
 start() method. This method returns immediately, so in order to wait for the
-app to finish running, one should call the await_stop() method afterwards.
+app to finish running, one should call the await_stop() method afterwards. 
+Alternatively, these steps can be combined using the run() method.
 
 Example:
 ```
@@ -20,12 +21,11 @@ def main():
     app = App()
 
     @app.on("start")
-    def on_start():
+    def start():
         app.screen.print("Hello world!")
         app.screen.update()
     
-    app.start()
-    app.await_stop()
+    app.run()
 
 if __name__ == "__main__":
     main()
@@ -41,13 +41,9 @@ import termpixels.observable
 
 class App(Observable):
     def __init__(self, *, mouse=False, framerate=30):
-        """Initialize the application.
-
-        The constructor may be overridden in subclasses to perform one-time
-        initialization routines, like creating event listeners. Most start-up 
-        code should be placed in the on_start() method, as it will be called
-        each time the app starts (if it starts more than once), and the 
-        terminal will be fully configured and ready for use.
+        """
+        mouse - whether to enable mouse tracking
+        framerate - number of "frame" events to emit per second
         """
         super().__init__()
         self.backend = detect_backend()
@@ -75,16 +71,14 @@ class App(Observable):
         self._frame_interval = self.create_interval("frame", 1/self._framerate)
 
     def run(self, *args, **kwargs):
+        """ start() and then await_stop() """
         self.start(*args, **kwargs)
         self.await_stop()
 
     def start(self, *args, **kwargs):
-        """Start collecting input and run the App's main loop.
-        
-        Starts the application and begins calling the on_frame() method at the
-        framerate specified in the constructor.
+        """ Start running the App asynchronously.
 
-        Forwards all arguments to the on_start() callback.
+        Forwards all arguments to the "start" event.
         """
         start_polling()
         self.t0 = perf_counter()
@@ -129,6 +123,7 @@ class App(Observable):
         self._stop_event.set()
 
     def await_stop(self):
+        """ Block until the App is stopped. """
         try:
             self._stop_event.wait()
         except KeyboardInterrupt:
