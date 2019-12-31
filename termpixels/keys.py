@@ -1,3 +1,5 @@
+import itertools
+
 class Key:
     r"""Represents a key press event.
 
@@ -65,19 +67,28 @@ class Mouse:
     "moved", then a `button` will be indicated by name. The possible `button` 
     values are "left", "middle", "right", "scrollup", and "scrolldown".
     """
-    def __init__(self, x, y, *, button=None, action=None):
+    def __init__(self, x, y, *, left=False, middle=False, right=False, action=None, scroll=0):
         self.x = x
         self.y = y
-        self.button = button
+
+        # only supports MB1/2/3 for now
+        self.left = left
+        self.middle = middle
+        self.right = right
+        
+        # action is mutually exclusive
         self.action = action
         self.down = action == "down"
         self.moved = action == "moved"
         self.up = action == "up"
-        self.left = button == "left"
-        self.right = button == "right"
-        self.middle = button == "middle"
-        self.scrollup = button == "scrollup"
-        self.scrolldown = button == "scrolldown"
+
+        self.scroll = scroll
+        self.scrollup = scroll < 0
+        self.scrolldown = scroll > 0
+    
+    @property
+    def buttons(self):
+        return itertools.compress(("left", "middle", "right"), (self.left, self.middle, self.right))
     
     def __repr__(self):
         param_names = ["x", "y", "button", "action"]

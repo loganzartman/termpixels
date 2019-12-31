@@ -12,7 +12,7 @@ from queue import Queue
 from termpixels.color import color_to_16, color_to_256
 from termpixels.observable import Observable
 from termpixels.terminfo import Terminfo
-from termpixels.unix_keys import Key, Mouse, make_key_parser, make_mouse_parser
+from termpixels.unix_keys import Key, Mouse, make_parsers
 from termpixels.util import terminal_len
 
 def detect_truecolor(terminfo=None):
@@ -144,10 +144,19 @@ class UnixBackend(Observable):
 
     @mouse_tracking.setter
     def mouse_tracking(self, enabled):
+        # https://invisible-island.net/xterm/ctlseqs/ctlseqs.html#h2-Mouse-Tracking 
         if not self._ti.string("kmous"):
             raise Exception("Terminal does not support mouse input")
+
+        # https://invisible-island.net/xterm/ctlseqs/ctlseqs.html#h3-Any-event-tracking
+        # Enables mouse tracking for any event
+        # By default, we get X10 mouse encoding (not great)
         self.write_escape(b"\x1b[?1003" + (b"h" if enabled else b"l")) # xterm all-motion mouse tracking
-        self.write_escape(b"\x1b[?1006" + (b"h" if enabled else b"l")) # xterm SGR mouse format
+
+        # We hope that the terminal ignores any of these it does not support.
+        # Ideally, we want SGR mouse encoding. rxvt may have other ideas.
+        self.write_escape(b"\x1b[?1005" + (b"h" if enabled else b"l")) # UTF-8 (extended X10) mouse encoding
+        self.write_escape(b"\x1b[?1006" + (b"h" if enabled else b"l")) # SGR mouse encoding
     
     @property
     def window_title(self):
@@ -213,8 +222,7 @@ class UnixInput(Observable):
 
         self._cbreak = False
         self._ti = Terminfo()
-        self._key_parser = make_key_parser(self._ti)
-        self._mouse_parser = make_mouse_parser(self._ti)
+        self._parsers = make_parsers(self._ti)
 
         self._has_exited = True
         self._has_exited_lock = threading.Lock()
@@ -247,8 +255,13 @@ class UnixInput(Observable):
     def collector_func(self):
         while not self._has_exited:
             self._stdin_selector.select()
-            # always decoding as UTF-8 is not strictly correct but simplifies design
-            data = bytes(os.read(self._fd_in, 2048)).decode("utf-8")
+
+            data_bytes = bytes(os.read(self._fd_in, 2048))
+            try:
+                data = data_bytes.decode("utf-8")
+            except UnicodeDecodeError:
+                data = list(map(chr, data_bytes))
+            
             for ch in data:
                 self._input_queue.put(ch)
     
@@ -278,7 +291,9 @@ class UnixInput(Observable):
     def parse_group(self, chars):
         self.emit("raw_input", chars)
         while len(chars) > 0:
-            results = [*self._key_parser.parse(chars), *self._mouse_parser.parse(chars)]
+            results = []
+            for parser in self._parsers:
+                results += parser.parse(chars)
             if len(results) > 0:
                 results.sort(key=lambda i: len(i[0]), reverse=True)
                 match, event = results[0]

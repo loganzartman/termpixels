@@ -17,10 +17,8 @@ class KeyParser:
                 matches.append((pattern, copy(key)))
         return matches
 
-MASK_MOVED = 0b100000
-MASK_BUTTON = 0b11
-MASK_WHEEL = 0b1000000
-class SgrMouseParser:    
+class SgrMouseParser: 
+    # https://invisible-island.net/xterm/ctlseqs/ctlseqs.html#h3-Extended-coordinates   
     def __init__(self, mouse_prefix):
         self.regex = re.compile(r"\x1b\[(?:\<|M)(\d+);(\d+);(\d+)(m|M)")
     
@@ -33,13 +31,16 @@ class SgrMouseParser:
         button = int(match.group(1))
         x = int(match.group(2)) - 1
         y = int(match.group(3)) - 1
-        mouse = Mouse(x, y, **SgrMouseParser.decodeButton(button, pressed))
+        mouse = Mouse(x, y, **SgrMouseParser.decode_button(button, pressed))
         return [(match.group(0), mouse)]
 
     @staticmethod
-    def decodeButton(btn, pressed):
+    def decode_button(btn, pressed):
+        MASK_MOVED = 0b100000
+        MASK_BUTTON = 0b11
+        MASK_WHEEL = 0b1000000
+
         action = None
-        button = None
 
         # detect action
         if btn & MASK_MOVED:
@@ -50,20 +51,102 @@ class SgrMouseParser:
             action = "up"
 
         # detect button
+        left = False
+        middle = False
+        right = False
+        scroll = 0
         if btn & MASK_WHEEL:
             if btn & MASK_BUTTON == 0:
-                button = "scrollup"
+                scroll = -1
             else:
-                button = "scrolldown"
+                scroll = 1
         else:
             code = btn & MASK_BUTTON
             if code == 0:
-                button = "left"
+                left = True
             elif code == 1:
-                button = "middle"
+                middle = True
             elif code == 2:
-                button = "right"
-        return {"action": action, "button": button}
+                right = True
+        
+        return {
+            "action": action, 
+            "left": left, 
+            "middle": middle, 
+            "right": right, 
+            "scroll": scroll
+        }
+
+class X10MouseParser:
+    # https://invisible-island.net/xterm/ctlseqs/ctlseqs.html#h2-Mouse-Tracking 
+    def __init__(self):
+        self.regex = re.compile(r"\x1b\[M(.)(.)(.)")
+    
+    def parse(self, group):
+        match = self.regex.match(group)
+        if match is None:
+            return []
+
+        event = ord(match.group(1)) - 32
+        x = ord(match.group(2)) - 32 - 1
+        y = ord(match.group(3)) - 32 - 1
+        mouse = Mouse(x, y, **X10MouseParser.decode_event(event))
+        return [(match.group(0), mouse)]
+    
+    @staticmethod
+    def decode_event(event_code):
+        """ decode an xterm mouse event character not shifted by 32 """
+        button_code = event_code & 0b11
+        action = "moved"
+        left = False
+        middle = False
+        right = False
+        scroll = 0
+        if event_code & 0b1000000:
+            # wheel event 
+            if not event_code & 0b0100000:
+                # based on testing in rxvt, we sometimes incorrectly see wheel
+                # data repeated in mouse motion events, but with the 32 bit set.
+
+                if button_code == 0:
+                    scroll = -1
+                elif button_code == 1:
+                    scroll = 1
+        else:
+            # button event
+            if button_code == 0:
+                left = True
+                action = "down"
+            elif button_code == 1:
+                middle = True
+                action = "down"
+            elif button_code == 2:
+                right = True
+                action = "down"
+            else:
+                # button up is ambiguous in X10 mouse encoding
+                left = True
+                middle = True
+                right = True
+                action = "up"
+        
+        mod_code = (event_code >> 2) & 0b111
+        # TODO: implement modifiers
+        if mod_code & 0b001:
+            pass # shift
+        if mod_code & 0b010:
+            pass # meta
+        if mod_code & 0b100:
+            pass # control
+
+        return {
+            "action": action,
+            "left": left, 
+            "middle": middle, 
+            "right": right,
+            "scroll": scroll 
+        }
+        
 
 def make_key_parser(ti):
     parser = KeyParser()
@@ -103,5 +186,9 @@ def make_key_parser(ti):
     parser.register_key("\x1b", Key(name="escape"))
     return parser
 
-def make_mouse_parser(ti):
-    return SgrMouseParser(ti.string("kmous").decode("ascii"))
+def make_parsers(ti):
+    return (
+        make_key_parser(ti),
+        X10MouseParser(),
+        SgrMouseParser(ti.string("kmous").decode("ascii"))
+    )
