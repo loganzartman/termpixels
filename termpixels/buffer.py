@@ -1,6 +1,3 @@
-from threading import Lock
-from copy import copy
-from time import perf_counter
 from termpixels.color import Color
 from termpixels.util import terminal_char_len, splitlines_print
 from termpixels.pixeldata import PixelData
@@ -18,7 +15,6 @@ class Buffer:
     """
 
     def __init__(self, w, h):
-        self.lock = Lock()
         self.cursor_pos = (0, 0)
         self.print_pos = (0, 0)
         self._w = 0
@@ -38,11 +34,10 @@ class Buffer:
 
     def resize(self, w, h):
         """Resize the screen buffer to the given width and height."""
-        with self.lock:
-            self._pixels = [[self._pixels[x][y] if x < self._w and y < self._h else PixelData() 
-                            for y in range(h)] for x in range(w)]
-            self._w = w
-            self._h = h
+        self._pixels = [[self._pixels[x][y] if x < self._w and y < self._h else PixelData() 
+                        for y in range(h)] for x in range(w)]
+        self._w = w
+        self._h = h
     
     def in_bounds(self, x, y):
         return x >= 0 and y >= 0 and x < self.w and y < self.h
@@ -57,15 +52,14 @@ class Buffer:
         The returned PixelData instance may be mutated to modify the contents
         of the screen buffer.
         """
-        with self.lock:
-            if clip:
-                x = max(0, min(self.w-1, x))
-                y = max(0, min(self.h-1, y))
-            if x >= self.w or x < 0:
-                raise Exception("x position {} out of bounds".format(x))
-            if y >= self.h or y < 0:
-                raise Exception("y position {} out of bounds".format(y))
-            return self._pixels[x][y]
+        if clip:
+            x = max(0, min(self.w-1, x))
+            y = max(0, min(self.h-1, y))
+        if x >= self.w or x < 0:
+            raise Exception("x position {} out of bounds".format(x))
+        if y >= self.h or y < 0:
+            raise Exception("y position {} out of bounds".format(y))
+        return self._pixels[x][y]
     
     def __getitem__(self, xy):
         x, y = xy
@@ -84,18 +78,17 @@ class Buffer:
         Any part of the rectangle that lies outside of the screen buffer will
         be silently ignored.
         """
-        with self.lock:
-            for i in range(x, x + w):
-                for j in range(y, y + h):
-                    if i < 0 or j < 0  or i >= self.w or j >= self.h:
-                        continue
-                    pixel = self._pixels[i][j]
-                    if fg is not None:
-                        pixel.fg = fg
-                    if bg is not None:
-                        pixel.bg = bg
-                    if char is not None:
-                        pixel.char = char
+        for i in range(x, x + w):
+            for j in range(y, y + h):
+                if i < 0 or j < 0  or i >= self.w or j >= self.h:
+                    continue
+                pixel = self._pixels[i][j]
+                if fg is not None:
+                    pixel.fg = fg
+                if bg is not None:
+                    pixel.bg = bg
+                if char is not None:
+                    pixel.char = char
     
     def clear(self, *, fg=Color(255,255,255), bg=Color(0,0,0), char=" "):
         """Fill the entire screen buffer with the given attributes.
@@ -103,11 +96,10 @@ class Buffer:
         Unlike fill(), all attributes must be specified. If not specified, they
         will be given default values instead.
         """
-        with self.lock:
-            blank = PixelData(fg=fg, bg=bg, char=char)
-            for i in range(0, self.w):
-                for j in range(0, self.h):
-                    self._pixels[i][j].set(blank)
+        blank = PixelData(fg=fg, bg=bg, char=char)
+        for i in range(0, self.w):
+            for j in range(0, self.h):
+                self._pixels[i][j].set(blank)
     
     def blit(self, buffer, x=0, y=0, x0=0, y0=0, x1=None, y1=None):
         """ copy a buffer to this buffer 
@@ -203,22 +195,21 @@ class Buffer:
         and foreground color for the whole screen, and then print text on top 
         using print().
         """
-        with self.lock:
-            if x is None:
-                x = self.print_pos[0]
-            if y is None:
-                y = self.print_pos[1]
-            if line_start is None:
-                line_start = x
+        if x is None:
+            x = self.print_pos[0]
+        if y is None:
+            y = self.print_pos[1]
+        if line_start is None:
+            line_start = x
 
-            y0 = y
-            x0 = x
-            for linenum, line in enumerate(splitlines_print(text)):
-                y = y0 + linenum
-                x = x0 if linenum == 0 else line_start
-                for ch in line:
-                    ch_len = self.put_char(ch, x, y, fg=fg, bg=bg)
-                    x += ch_len
-        
-            self.print_pos = (x, y)
-            return self.print_pos
+        y0 = y
+        x0 = x
+        for linenum, line in enumerate(splitlines_print(text)):
+            y = y0 + linenum
+            x = x0 if linenum == 0 else line_start
+            for ch in line:
+                ch_len = self.put_char(ch, x, y, fg=fg, bg=bg)
+                x += ch_len
+    
+        self.print_pos = (x, y)
+        return self.print_pos

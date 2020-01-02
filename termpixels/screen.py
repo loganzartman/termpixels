@@ -59,24 +59,23 @@ class Screen(Buffer):
         the entire screen whenever you make an update, if it seems too
         challenging to manually make only the necessary changes.
         """
-        with self.lock:
-            t0 = perf_counter()
-            self._update_count = 0
-            for y in range(self.h):
-                for x in range(self.w):
-                    pixel = self._pixels[x][y]
-                    if pixel != self._pixels_cache[x][y]:
-                        self._pixels_cache[x][y].set(pixel)
-                        self._update_count += 1
+        t0 = perf_counter()
+        self._update_count = 0
+        for y in range(self.h):
+            for x in range(self.w):
+                pixel = self._pixels[x][y]
+                if pixel != self._pixels_cache[x][y]:
+                    self._pixels_cache[x][y].set(pixel)
+                    self._update_count += 1
 
-                        # don't render a pixel shadowed by a fullwidth character
-                        if x > 0 and terminal_char_len(self._pixels[x-1][y].char) > 1:
-                            continue
-                        self.render(pixel, x, y)
-                    
-            self.backend.cursor_pos = self.cursor_pos
-            self.backend.flush()
-            self._update_duration = perf_counter() - t0
+                    # don't render a pixel shadowed by a fullwidth character
+                    if x > 0 and terminal_char_len(self._pixels[x-1][y].char) > 1:
+                        continue
+                    self.render(pixel, x, y)
+                
+        self.backend.cursor_pos = self.cursor_pos
+        self.backend.flush()
+        self._update_duration = perf_counter() - t0
     
     def render(self, pixel, x, y):
         """Use the backend to redraw a particular PixelData instance.
