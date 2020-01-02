@@ -142,20 +142,59 @@ class Buffer:
                     continue
                 self._pixels[dst_x][dst_y].set(buffer._pixels[src_x][src_y])
     
+    def put_char(self, ch, x, y, *, fg=None, bg=None):
+        """Put a single character and/or colors at a particular location.
+
+        Puts a single character at the given x, y coordinates, only if those
+        coordinates are within the bounds of the buffer. Coordinates are also
+        considered out of bounds if the character has a width greater than 1 
+        and it would not be entirely within the bounds of the buffer. If the 
+        given coordinates are out of bounds, this method has no effect.
+
+        If fg or bg colors are specified, they replace the fg or bg colors at
+        the given coordinates. If None is given for either argument, the 
+        existing colors are left unchanged.
+
+        Returns the width of the character that was provided, even if it was 
+        out of bounds.
+        """
+        ch_len = terminal_char_len(ch)
+        if x >= 0 and y >= 0 and x + ch_len <= self.w and y < self.h:
+            pixel = self._pixels[x][y]
+            pixel.char = ch
+            if fg:
+                pixel.fg = fg
+            if bg:
+                pixel.bg = bg
+            
+            # handle fullwidth (double-wide) characters.
+            # clear character and set fg and bg so that values make sense if
+            # the fullwidth character is later removed.
+            if ch_len > 1:
+                assert ch_len == 2
+                shadowed = self._pixels[x+1][y]
+                shadowed.char = " "
+                if fg:
+                    shadowed.fg = fg
+                if bg:
+                    shadowed.bg = bg
+        return ch_len
+    
     def print(self, text, x=None, y=None, *, line_start=None, fg=None, bg=None):
         """Print a string of text starting at a particular location.
 
         Prints a string of one or more lines of text starting at the given
         location, ignoring text that falls outside the bounds of the buffer.
         Newlines can be used to move the cursor down a line and back to the
-        initial x position. The cursor is NOT necessarily moved all the way
+        line start position. The cursor is NOT necessarily moved all the way
         to the left of the screen. To set the x position to which the cursor
         returns after a newline, provide the line_start keyword argument.
         
         Returns the location of the cursor after the text has been printed.
         
         If a location is not given, then the text will be printed at the end
-        of the last text printed, or at (0,0) if nothing has been printed.
+        of the last text printed, or at (0,0) if nothing has been printed. 
+        This location is stored in the Buffer's print_pos attribute.
 
         Replaces the foreground and background of modified pixels if each is 
         specified. If colors are not specified, they will be left alone. 
@@ -178,24 +217,8 @@ class Buffer:
                 y = y0 + linenum
                 x = x0 if linenum == 0 else line_start
                 for ch in line:
-                    ch_len = terminal_char_len(ch)
-                    if x >= 0 and y >= 0 and x < self.w and y < self.h:
-                        pixel = self._pixels[x][y]
-                        pixel.char = ch
-                        if fg:
-                            pixel.fg = fg
-                        if bg:
-                            pixel.bg = bg
-                        
-                        # handle fullwidth (double-wide) characters
-                        if ch_len > 1 and x < self.w - 1:
-                            shadowed = self._pixels[x+1][y]
-                            shadowed.char = " "
-                            if fg:
-                                shadowed.fg = fg
-                            if bg:
-                                shadowed.bg = bg
+                    ch_len = self.put_char(ch, x, y, fg=fg, bg=bg)
                     x += ch_len
         
-        self.print_pos = (x, y)
-        return self.print_pos
+            self.print_pos = (x, y)
+            return self.print_pos

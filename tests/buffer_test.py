@@ -74,6 +74,48 @@ def test_buffer_clear_char():
     assert buffer.at(0, 0).char == "X"
     assert buffer.at(1, 0).char == "X"
 
+def test_put_char():
+    buffer = Buffer(2, 2)
+    buffer.put_char("X", 1, 1)
+    assert_buffer_matches(
+        buffer,
+        "  ",
+        " X"
+    )
+
+def test_put_char_fullwidth():
+    buffer = Buffer(2, 1)
+    buffer.put_char("人", 0, 0)
+    assert_buffer_matches(
+        buffer,
+        "人 "
+    )
+
+def test_put_char_fullwidth_shadow():
+    buffer = Buffer(3, 1)
+    buffer.clear(char="x")
+    buffer.put_char("人", 1, 0)
+    assert_buffer_matches(
+        buffer,
+        "x人 "
+    )
+
+def test_put_char_oob():
+    buffer = Buffer(2, 1)
+    buffer.put_char("X", 2, 0)
+    assert_buffer_matches(
+        buffer,
+        "  "
+    )
+
+def test_put_char_partial_oob():
+    buffer = Buffer(2, 1)
+    buffer.put_char("人", 1, 0)
+    assert_buffer_matches(
+        buffer,
+        "  "
+    )
+
 def test_print():
     buffer = Buffer(5, 1)
     buffer.print("Hello", 0, 0)
