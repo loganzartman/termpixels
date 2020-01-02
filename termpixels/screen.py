@@ -65,13 +65,15 @@ class Screen(Buffer):
             for y in range(self.h):
                 for x in range(self.w):
                     pixel = self._pixels[x][y]
-                    if pixel._hash == None and pixel != self._pixels_cache[x][y]:
+                    if pixel != self._pixels_cache[x][y]:
                         self._pixels_cache[x][y].set(pixel)
                         self._update_count += 1
-                        # handle fullwidth (double-wide) characters
+
+                        # don't render a pixel shadowed by a fullwidth character
                         if x > 0 and terminal_char_len(self._pixels[x-1][y].char) > 1:
                             continue
                         self.render(pixel, x, y)
+                    
             self.backend.cursor_pos = self.cursor_pos
             self.backend.flush()
             self._update_duration = perf_counter() - t0
