@@ -1,6 +1,7 @@
 from termpixels.pixeldata import PixelData
 from time import perf_counter
 
+# Boxes
 _BOX_T = 0
 _BOX_B = 1
 _BOX_L = 2
@@ -17,6 +18,56 @@ BOX_CHARS_HEAVY = "━━┃┃┏┓┗┛"
 BOX_CHARS_DOUBLE = "══║║╔╗╚╝"
 BOX_CHARS_LIGHT_DOUBLE_TOP = "═─││╒╕└┘"
 
+# Frames
+# logical indices for strings of frame characters
+_FRAME_NO = -1 # not a frame character
+_FRAME_H = 0   # horizontal index
+_FRAME_V = 1   # vertical
+_FRAME_TL = 2  # top left corner
+_FRAME_TR = 3  # top right corner
+_FRAME_BL = 4  # bottom left corner
+_FRAME_BR = 5  # bottom right corner
+_FRAME_VR = 6  # vertical and right
+_FRAME_VL = 7  # vertical and left
+_FRAME_HB = 8  # horizontal and bottom
+_FRAME_HT = 9  # horizontal and top
+_FRAME_VH = 10 # vertical and horizontal
+_FRAME_L = 11  # left
+_FRAME_T = 12  # top
+_FRAME_R = 13  # right
+_FRAME_B = 14  # bottom
+
+# bitmask representing left, top, right, bottom
+# each bit represents whether a character "points" or "flows" in that direction.
+# for example, a top left corner (_FRAME_TL, e.g. "┌") points right and down.
+_FRAME_GEOMETRY = {
+    _FRAME_NO: 0b0000,
+    _FRAME_L:  0b1000,
+    _FRAME_T:  0b0100,
+    _FRAME_R:  0b0010,
+    _FRAME_B:  0b0001,
+    _FRAME_H:  0b1010,
+    _FRAME_V:  0b0101,
+    _FRAME_TL: 0b0011,
+    _FRAME_TR: 0b1001,
+    _FRAME_BL: 0b0110,
+    _FRAME_BR: 0b1100,
+    _FRAME_VR: 0b0111,
+    _FRAME_VL: 0b1101,
+    _FRAME_HB: 0b1011,
+    _FRAME_HT: 0b1110,
+    _FRAME_VH: 0b1111
+}
+# inverse mapping of _FRAME_GEOMETRY
+_GEOMETRY_FRAME = {geom: char for char, geom in _FRAME_GEOMETRY.items()}
+
+FRAME_CHARS_LIGHT = "─│┌┐└┘├┤┬┴┼╴╵╶╷"
+FRAME_CHARS_LIGHT_LONG = "─│┌┐└┘├┤┬┴┼─│─│"
+FRAME_CHARS_HEAVY = "━┃┏┓┗┛┣┫┳┻╋╸╹╺╻"
+FRAME_CHARS_HEAVY_LONG = "━┃┏┓┗┛┣┫┳┻╋━┃━┃"
+FRAME_CHARS_DOUBLE = "═║╔╗╚╝╠╣╦╩╬═║═║"
+
+# Spinners
 SPINNER_SIX = "⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏"
 SPINNER_PIPE = "-\\|/"
 SPINNER_BAR = ["[    ]",
@@ -85,6 +136,70 @@ def draw_box(buffer, x, y, w, h, chars=BOX_CHARS_LIGHT, **kwargs):
         buffer.print(chars[_BOX_TR], x + w - 1, y, **kwargs)
         buffer.print(chars[_BOX_BL], x, y + h -1, **kwargs)
         buffer.print(chars[_BOX_BR], x + w - 1, y + h - 1, **kwargs)
+
+def _invert_geometry(geom):
+    """Invert (rotate 180 degrees) a 4-bit frame geometry bitmask."""
+    return (geom >> 2) | ((geom << 2) & 0b1100)
+
+def _frame_connecting_char(buffer, char, x, y, chars):
+    """Connect a frame character to neighbors and return the resuling character index.
+    
+    For example, imagine we are drawing a horizontal line "─" on top of a corner "└".
+    We want to produce the combined character "┴".
+    """
+
+    assert char != _FRAME_NO
+
+    def buffer_char(x, y):
+        if not buffer.in_bounds(x, y):
+            return -1
+        char = buffer[x, y].char
+        try:
+            return chars.index(char)
+        except ValueError:
+            return -1
+    
+    geom = _FRAME_GEOMETRY[char]
+    geom |= _invert_geometry(_FRAME_GEOMETRY[buffer_char(x - 1, y)] & 0b0010)
+    geom |= _invert_geometry(_FRAME_GEOMETRY[buffer_char(x, y - 1)] & 0b0001)
+    geom |= _invert_geometry(_FRAME_GEOMETRY[buffer_char(x + 1, y)] & 0b1000)
+    geom |= _invert_geometry(_FRAME_GEOMETRY[buffer_char(x, y + 1)] & 0b0100)
+
+    assert geom != _FRAME_NO
+    return _GEOMETRY_FRAME[geom]
+
+def draw_frame(buffer, x, y, w, h, chars=FRAME_CHARS_LIGHT, **kwargs):
+    """Draw a box, connecting it where it overlaps with an existing box."""
+
+    frame_pixels = []
+    def pixel(char_idx, x, y):
+        char = chars[_frame_connecting_char(buffer, char_idx, x, y, chars)]
+        frame_pixels.append((char, x, y))
+    
+    if w < 1 or h < 1:
+        return
+    if h > 1:
+        for px in (max(0, x + w - 1), x):
+            for py in range(y, y + h):
+                pixel(_FRAME_V, px, py)
+            if h > 1:
+                pixel(_FRAME_B, px, y)
+                pixel(_FRAME_T, px, y + h - 1)
+    if w > 1:
+        for py in (max(0, y + h - 1), y):
+            for px in range(x, x + w):
+                pixel(_FRAME_H, px, py)
+            if w > 1:
+                pixel(_FRAME_R, x, py)
+                pixel(_FRAME_L, x + w - 1, py)
+    if w > 1 and h > 1:
+        pixel(_FRAME_TL, x, y)
+        pixel(_FRAME_TR, x + w - 1, y)
+        pixel(_FRAME_BL, x, y + h -1)
+        pixel(_FRAME_BR, x + w - 1, y + h - 1)
+
+    for char, x, y in frame_pixels:
+        buffer.put_char(char, x, y, **kwargs)
 
 def draw_spinner(buffer, x, y, *, freq=1, t=None, frames=SPINNER_SIX, **kwargs):
     """Print a repeating animation.
