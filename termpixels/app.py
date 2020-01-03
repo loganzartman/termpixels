@@ -110,7 +110,6 @@ class App(Observable):
         self.emit("start", *args, **kwargs)
     
     def _on_stop(self):
-        self._frame_interval.cancel()
         self.backend.application_keypad = False
         self.backend.mouse_tracking = False
         self.input.stop()
@@ -140,6 +139,7 @@ class App(Observable):
         # is restored, respectively.
         if not self._stopping:
             self._stopping = True
+            self._frame_interval.cancel()
             self.emit("before_stop")
             self.emit("_stop")
             self.emit("after_stop")

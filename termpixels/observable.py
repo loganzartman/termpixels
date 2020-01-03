@@ -93,7 +93,8 @@ class Interval:
         self.kwargs = kwargs
         self._await_dispatched = await_dispatched
 
-        self._cancelled = threading.Event()
+        self._cancelled = False
+        self._cancelled_lock = Lock()
         thread_name = "Interval emitter for '{}' from 0x{:X}".format(event_name, id(source))
         self._thread = threading.Thread(name=thread_name, target=self._main, daemon=True)
     
@@ -104,12 +105,13 @@ class Interval:
         event = None
         while True:
             self._sleep(self.interval)
-            if self._cancelled.is_set():
-                break
             if event and self._await_dispatched:
                 event.await_dispatched()
-            event = Event(source=self.source, name=self.event_name, args=self.args, kwargs=self.kwargs, track_dispatch=self._await_dispatched)
-            self.queue.put(event)
+            with self._cancelled_lock:
+                if self._cancelled:
+                    break
+                event = Event(source=self.source, name=self.event_name, args=self.args, kwargs=self.kwargs, track_dispatch=self._await_dispatched)
+                self.queue.put(event)
 
     def start(self):
         """Start emitting the event, first waiting for the specified time to elapse.
@@ -121,7 +123,8 @@ class Interval:
 
     def cancel(self):
         """Stop emitting the event."""
-        self._cancelled.set()
+        with self._cancelled_lock:
+            self._cancelled = True 
 
 def poll_events(queue=main_event_queue):
     """Immediately dispatch (invoke listeners for) all events in a queue."""
