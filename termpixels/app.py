@@ -36,7 +36,7 @@ from time import sleep, perf_counter
 from threading import Event
 from termpixels.screen import Screen
 from termpixels.detector import detect_backend, detect_input
-from termpixels.observable import Observable, start_polling, poll_events, Interval
+from termpixels.observable import Observable, start_polling, join_event_queue, Interval
 import termpixels.observable
 
 class App(Observable):
@@ -129,7 +129,7 @@ class App(Observable):
             pass
         finally:
             self.stop()
-            poll_events()
+            join_event_queue()
             self._exit_event.wait()
 
     def stop(self):

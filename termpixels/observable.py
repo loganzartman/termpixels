@@ -132,8 +132,13 @@ def poll_events(queue=main_event_queue):
         while True:
             event = queue.get_nowait()
             _dispatch_event(event)
+            queue.task_done()
     except Empty:
         pass
+
+def join_event_queue(queue=main_event_queue):
+    """Call join() on the queue to wait for event processing."""
+    queue.join()
 
 _is_polling = set()
 _is_polling_lock = Lock()
@@ -153,6 +158,7 @@ def start_polling(queue=main_event_queue):
         while True:
             event = queue.get()
             _dispatch_event(event)
+            queue.task_done()
     thread = Thread(name="Event loop for queue 0x{:X}".format(id(queue)), target=fn, daemon=True)
     thread.start()
     return True
