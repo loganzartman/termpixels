@@ -110,15 +110,16 @@ class App(Observable):
         self.emit("start", *args, **kwargs)
     
     def _on_stop(self):
+        self.input.stop()
+
+        # cleanup terminal state
+        self.backend.show_cursor = True
         self.backend.application_keypad = False
         self.backend.mouse_tracking = False
-        self.input.stop()
-        self.screen.show_cursor = True
-        self.screen.update()
         self.backend.set_charset_utf8(False)
-        self.backend.flush()
         self.backend.exit_alt_buffer()
         self.backend.flush()
+
         self._stop_event.set()
 
     def await_stop(self):
