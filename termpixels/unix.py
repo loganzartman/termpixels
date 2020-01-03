@@ -207,7 +207,14 @@ class UnixBackend(Observable):
             self._cursor_pos = (self.cursor_pos[0] + terminal_len(text), self.cursor_pos[1])
 
     def flush(self):
-        os.write(self._fd_out, self._out_buffer)
+        try:
+            os.write(self._fd_out, self._out_buffer)
+        except BrokenPipeError:
+            # this can happen if stdout is redirected to a program and the 
+            # program exits before termpixels. We switch to TTY output so that
+            # the terminal can be reset if necessary.
+            self._fd_out = self._fd_out_tty
+        
         self._out_buffer.clear()
         termios.tcdrain(self._fd_out_tty)
 
