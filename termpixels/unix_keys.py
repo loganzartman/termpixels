@@ -97,17 +97,23 @@ class X10MouseParser:
     def decode_event(event_code):
         """ decode an xterm mouse event character not shifted by 32 """
         button_code = event_code & 0b11
-        action = "moved"
+        moved = event_code & 0b100000
+        released = button_code == 3
         left = False
         middle = False
         right = False
         scroll = 0
+
+        if moved:
+            action = "moved"
+        elif released:
+            action = "up"
+        else:
+            action = "down"
+        
         if event_code & 0b1000000:
             # wheel event 
-            if not event_code & 0b0100000:
-                # based on testing in rxvt, we sometimes incorrectly see wheel
-                # data repeated in mouse motion events, but with the 32 bit set.
-
+            if not moved:
                 if button_code == 0:
                     scroll = -1
                 elif button_code == 1:
@@ -116,19 +122,15 @@ class X10MouseParser:
             # button event
             if button_code == 0:
                 left = True
-                action = "down"
             elif button_code == 1:
                 middle = True
-                action = "down"
             elif button_code == 2:
                 right = True
-                action = "down"
             else:
                 # button up is ambiguous in X10 mouse encoding
                 left = True
                 middle = True
                 right = True
-                action = "up"
         
         mod_code = (event_code >> 2) & 0b111
         # TODO: implement modifiers
