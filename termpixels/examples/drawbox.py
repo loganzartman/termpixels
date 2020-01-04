@@ -1,6 +1,6 @@
 from termpixels import App, Buffer, Color
 from termpixels.drawing import draw_box, BOX_CHARS_DOUBLE
-from termpixels.drawing import draw_frame, FRAME_CHARS_HEAVY
+from termpixels.drawing import draw_frame, FRAME_CHARS_DOUBLE
 from termpixels.util import corners_to_box
 from time import perf_counter
 
@@ -18,7 +18,7 @@ def main():
             return
         x, y, w, h = corners_to_box(*drag_start, *mouse_pos)
         # draw_box(buffer, x, y, w, h, chars=BOX_CHARS_DOUBLE, fg=Color.hsl(perf_counter(), 1.0, 0.5))
-        draw_frame(buffer, x, y, w, h, fg=Color.hsl(perf_counter(), 1.0, 0.5))
+        draw_frame(buffer, x, y, w, h, chars=FRAME_CHARS_DOUBLE, fg=Color.hsl(perf_counter(), 1.0, 0.5))
 
     @app.on("start")
     @app.on("resize")
