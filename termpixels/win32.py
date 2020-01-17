@@ -375,23 +375,19 @@ class Win32Input(Observable):
                     pos = e.MouseEvent.dwMousePosition
                     
                     btn = e.MouseEvent.dwButtonState
-                    button = None
-                    if btn == FROM_LEFT_1ST_BUTTON_PRESSED:
-                        button = "left"
-                    elif btn == FROM_LEFT_2ND_BUTTON_PRESSED:
-                        button = "middle"
-                    elif btn == RIGHTMOST_BUTTON_PRESSED:
-                        button = "right"
+                    left = btn == FROM_LEFT_1ST_BUTTON_PRESSED
+                    middle = btn == FROM_LEFT_2ND_BUTTON_PRESSED
+                    right = btn == RIGHTMOST_BUTTON_PRESSED
 
                     evt = e.MouseEvent.dwEventFlags
                     action = None
                     if evt == MOUSE_MOVED:
                         action = "moved"
-                    elif button is not None:
+                    elif left or middle or right:
                         action = "down"
                     # no way to detect up
 
-                    mouse = Mouse(x=pos.X, y=pos.Y, button=button, action=action)
+                    mouse = Mouse(x=pos.X, y=pos.Y, left=left, middle=middle, right=right, action=action, scroll=0)
                     self.emit("mouse", mouse)
                 if t == WINDOW_BUFFER_SIZE_EVENT:
                     self.emit("resize")
