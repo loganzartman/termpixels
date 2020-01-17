@@ -169,7 +169,7 @@ KEY_MAP = {
     VK_ESCAPE: {"name": "escape"},
 }
 for i in range(24):
-    KEY_MAP[VK_F1 + i] = "f{}".format(i + 1)
+    KEY_MAP[VK_F1 + i] = {"name": "f{}".format(i + 1)}
 
 def vk_to_key(code):
     """Convert a Windows virtual key code to a termpixels Key."""
