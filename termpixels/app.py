@@ -40,7 +40,7 @@ from termpixels.observable import Observable, start_polling, join_event_queue, I
 import termpixels.observable
 
 class App(Observable):
-    def __init__(self, *, mouse=False, framerate=30):
+    def __init__(self, *, mouse=False, framerate=30, exit_key="escape"):
         """
         mouse - whether to enable mouse tracking
         framerate - number of "frame" events to emit per second
@@ -63,6 +63,12 @@ class App(Observable):
         self.listen("_start", self._on_start)
         self.listen("_stop", self._on_stop)
         self.listen("_exit", lambda: self._exit_event.set())
+
+        if exit_key is not None:
+            @self.on("key")
+            def key(k):
+                if k == exit_key:
+                    self.stop()
 
         self._framerate = framerate
         self._mouse = mouse
@@ -116,7 +122,10 @@ class App(Observable):
         self.backend.show_cursor = True
         self.backend.application_keypad = False
         self.backend.mouse_tracking = False
-        self.backend.set_charset_utf8(False)
+        try:
+            self.backend.set_charset_utf8(False)
+        except AttributeError:
+            pass
         self.backend.exit_alt_buffer()
         self.backend.flush()
 
