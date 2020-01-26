@@ -1,8 +1,13 @@
-from collections import defaultdict
+from collections import defaultdict, deque
 from queue import Queue, Empty
 from threading import Thread, Lock
+import sys
 import threading
 import time
+import traceback
+
+_EVENT_HISTORY_LENGTH = 8
+_DEBUG_EVENTS = True
 
 main_event_queue = Queue()
 
@@ -19,10 +24,22 @@ class Event:
         self.name = name
         self.args = args
         self.kwargs = kwargs
+        
+        if _DEBUG_EVENTS:
+            self._traceback = traceback.format_stack()
+        else:
+            self._traceback = None
+
         self._dispatched = None
         if track_dispatch:
             self._dispatched = threading.Event()
+    
+    def __repr__(self):
+        return "Event(name='{}', source='{}')".format(self.name, self.source)
 
+    def __str__(self):
+        return repr(self)
+    
     def await_dispatched(self):
         """Block until this Event is dispatched."""
         assert self._dispatched is not None
@@ -95,8 +112,6 @@ class Interval:
 
         self._cancelled = False
         self._cancelled_lock = Lock()
-        thread_name = "Interval emitter for '{}' from 0x{:X}".format(event_name, id(source))
-        self._thread = threading.Thread(name=thread_name, target=self._main, daemon=True)
     
     def _sleep(self, seconds):
         time.sleep(seconds)
@@ -118,13 +133,47 @@ class Interval:
         
         Return self.
         """
-        self._thread.start()
-        return self
+        with self._cancelled_lock:
+            if self._cancelled:
+                raise RuntimeError("Interval cannot be started after cancellation")
+            thread_name = "Interval emitter for '{}' from 0x{:X}".format(self.event_name, id(self.source))
+            self._thread = threading.Thread(name=thread_name, target=self._main, daemon=True)
+            self._thread.start()
+            return self
 
     def cancel(self):
         """Stop emitting the event."""
         with self._cancelled_lock:
-            self._cancelled = True 
+            self._cancelled = True
+
+def dump_event_log(events, file=sys.stderr):
+    """
+    Format and print an iterable of Events and the traceback of the most recent one (if _DEBUG_EVENTS is True).
+    """
+
+    print("Event log (current event last):", file=file)
+    
+    events_list = list(events)
+    event_name_size = max(len(e.name) for e in events_list)
+
+    def print_event(event, last=False):
+        event_name = event.name.ljust(event_name_size)
+        event_args_items = [str(a) for a in event.args] + ["{}={}".format(str(k), str(v)) for k, v in event.kwargs.items()]
+        event_args = "(" + ", ".join(event_args_items) + ")"
+        print("*" if last else " ", event_name, event_args, file=file)
+
+    # print log of recent events and arguments
+    for event in events_list[:-1]:
+        print_event(event)
+    print_event(events_list[-1], last=True)
+    print(file=file)
+    
+    # print call stack for most recent event
+    if events_list[-1]._traceback is not None:
+        print("Traceback of this event:", file=file)
+        for line in events_list[-1]._traceback[:-2]: # slice off extraneous information
+            print(line, end="", file=file)
+    print(file=file)
 
 def poll_events(queue=main_event_queue):
     """Immediately dispatch (invoke listeners for) all events in a queue."""
@@ -155,9 +204,16 @@ def start_polling(queue=main_event_queue):
         _is_polling.add(id(queue))
     
     def fn():
+        history = deque(maxlen=_EVENT_HISTORY_LENGTH)
         while True:
             event = queue.get()
-            _dispatch_event(event)
+            history.append(event)
+            try:
+                _dispatch_event(event)
+            except Exception as e:
+                if _DEBUG_EVENTS:
+                    dump_event_log(history)
+                raise e
             queue.task_done()
     thread = Thread(name="Event loop for queue 0x{:X}".format(id(queue)), target=fn, daemon=True)
     thread.start()
