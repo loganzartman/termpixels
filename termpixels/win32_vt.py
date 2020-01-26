@@ -72,7 +72,8 @@ class Win32VtBackend(Win32Backend):
     
     def write(self, text):
         self.write_escape(text)
-        self._cursor_pos = (self._cursor_pos[0] + terminal_len(text), self._cursor_pos[1])
+        if self._cursor_pos is not None:
+            self._cursor_pos = (self._cursor_pos[0] + terminal_len(text), self._cursor_pos[1])
 
     def write_escape(self, text):
         self._buffer.append(text)
