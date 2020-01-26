@@ -91,6 +91,6 @@ class Mouse:
         return itertools.compress(("left", "middle", "right"), (self.left, self.middle, self.right))
     
     def __repr__(self):
-        param_names = ["x", "y", "button", "action"]
+        param_names = ["x", "y", "left", "middle", "right", "action"]
         params = ["{}={}".format(name, repr(getattr(self, name))) for name in param_names if getattr(self, name)]
         return "Mouse({})".format(", ".join(params))
