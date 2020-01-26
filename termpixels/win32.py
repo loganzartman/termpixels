@@ -349,7 +349,6 @@ class Win32Input(Observable):
         self._old_cp = None
 
         self._exit_event = threading.Event()
-        self._reader = threading.Thread(target=self._read, daemon=True)
     
     def _read(self):
         MAX_RECORDS = 16
@@ -400,9 +399,11 @@ class Win32Input(Observable):
         windll.kernel32.GetConsoleMode(self._stdin, byref(self._old_mode))
         windll.kernel32.SetConsoleMode(self._stdin, ENABLE_EXTENDED_FLAGS | ENABLE_PROCESSED_INPUT | ENABLE_WINDOW_INPUT | ENABLE_MOUSE_INPUT)
         
+        self._reader = threading.Thread(target=self._read, daemon=True)
         self._reader.start()
     
     def stop(self):
         windll.kernel32.SetConsoleMode(self._stdin, self._old_mode)
         windll.kernel32.SetConsoleCP(self._old_cp)
         self._exit_event.set()
+        self._reader.join()

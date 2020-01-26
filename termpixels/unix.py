@@ -238,12 +238,8 @@ class UnixInput(Observable):
         self._stdin_selector.register(self._fd_in, selectors.EVENT_READ)
 
         self._input_queue = Queue()
-        self._collector = threading.Thread(name="Unix input collector", target=self.collector_func, daemon=True)
-
-        self._grouper = threading.Thread(name="Unix input grouper", target=self.grouper_func, daemon=True)
-
         self._sigwinch_event = threading.Event()
-        self._sigwinch_consumer = threading.Thread(name="Unix SIGWINCH watcher", target=self.watch_sigwinch, daemon=True)
+
         signal.signal(signal.SIGWINCH, self.handle_sigwinch)
     
     def handle_sigwinch(self, signum, frame):
@@ -331,6 +327,11 @@ class UnixInput(Observable):
             self._has_exited = False
             self.set_cbreak(True)
             os.set_blocking(self._fd_in, False)
+
+            self._collector = threading.Thread(name="Unix input collector", target=self.collector_func, daemon=True)
+            self._grouper = threading.Thread(name="Unix input grouper", target=self.grouper_func, daemon=True)
+            self._sigwinch_consumer = threading.Thread(name="Unix SIGWINCH watcher", target=self.watch_sigwinch, daemon=True)
+
             self._collector.start()
             self._grouper.start()
             self._sigwinch_consumer.start()

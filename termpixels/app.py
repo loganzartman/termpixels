@@ -74,8 +74,6 @@ class App(Observable):
         self._mouse = mouse
         self._stopping = False
 
-        self._frame_interval = self.create_interval("frame", 1/self._framerate)
-
     def run(self, *args, **kwargs):
         """ start() and then await_stop() """
         self.start(*args, **kwargs)
@@ -112,6 +110,7 @@ class App(Observable):
         self.screen.show_cursor = False
         self.backend.flush()
 
+        self._frame_interval = self.create_interval("frame", 1/self._framerate)
         self._frame_interval.start()
         self.emit("start", *args, **kwargs)
     
@@ -135,12 +134,14 @@ class App(Observable):
         """ Block until the App is stopped. """
         try:
             self._stop_event.wait()
+            self._stop_event.clear()
         except KeyboardInterrupt:
             pass
         finally:
             self.stop()
             join_event_queue()
             self._exit_event.wait()
+            self._exit_event.clear()
 
     def stop(self):
         """Tell the application to stop running gracefully."""
