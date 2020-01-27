@@ -256,20 +256,36 @@ class UnixInput(Observable):
         return self._cbreak
 
     def collector_func(self):
-        while not self._has_exited:
-            self._stdin_selector.select()
+        # The encoding of input on stdin is unknown.
+        # If the terminal supports UTF-8 mode, it will be UTF-8 encoded.
+        # UTF-8 enables multilingual input, but is not always available.
 
+        # In order to try to parse UTF-8, we want to read all available
+        # data at once. At no point do we want to decode a fragment of 
+        # UTF-8 bytes.
+
+        while not self._has_exited:
+            self._stdin_selector.select() # wait for data on stdin
+
+            # read chunks of stdin until it will block
+            data_chunks = []
             try:
-                data_bytes = bytes(os.read(self._fd_in, 2048))
-                try:
-                    data = data_bytes.decode("utf-8")
-                except UnicodeDecodeError:
-                    data = list(map(chr, data_bytes))
-            
-                for ch in data:
-                    self._input_queue.put(ch)
+                while True:
+                    data_chunks.append(os.read(self._fd_in, 2048))
             except BlockingIOError:
-                pass # non-blocking read not possible; try again or exit
+                pass
+
+            # concatenate and decode chunks
+            data_bytes = b"".join(data_chunks)
+            try:
+                data = data_bytes.decode("utf-8")
+            except UnicodeDecodeError:
+                # this indicates that the terminal is not generating UTF-8 input
+                data = list(map(chr, data_bytes))
+        
+            # enqueue characters
+            for ch in data:
+                self._input_queue.put(ch)
     
     def grouper_func(self):
         buffer = []
