@@ -259,14 +259,17 @@ class UnixInput(Observable):
         while not self._has_exited:
             self._stdin_selector.select()
 
-            data_bytes = bytes(os.read(self._fd_in, 2048))
             try:
-                data = data_bytes.decode("utf-8")
-            except UnicodeDecodeError:
-                data = list(map(chr, data_bytes))
+                data_bytes = bytes(os.read(self._fd_in, 2048))
+                try:
+                    data = data_bytes.decode("utf-8")
+                except UnicodeDecodeError:
+                    data = list(map(chr, data_bytes))
             
-            for ch in data:
-                self._input_queue.put(ch)
+                for ch in data:
+                    self._input_queue.put(ch)
+            except BlockingIOError:
+                pass # non-blocking read not possible; try again or exit
     
     def grouper_func(self):
         buffer = []
