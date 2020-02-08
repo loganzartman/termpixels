@@ -5,7 +5,9 @@
 [![Code Coverage](https://codecov.io/gh/loganzartman/termpixels/branch/master/graph/badge.svg)](https://codecov.io/gh/loganzartman/termpixels)
 
 ## Get it
-[This project is on PyPI][pypi].
+[This project is on PyPI][pypi]: `pip install --pre termpixels`
+
+(Use prerelease versions until 1.0.0!)
 
 Alternatively, clone this repository and `pip install -e .` in the root directory.
 
