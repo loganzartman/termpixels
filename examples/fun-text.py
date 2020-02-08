@@ -20,8 +20,7 @@ def main():
         
         app.screen.update()                          # commit the changes to the screen
     
-    app.start()                                      # returns immediately; feel free to do other work 
-    app.await_stop()                                 # block here until the app exits (e.g. CTRL+C)
+    app.run()                                        # block here until the app exits (press Escape!)
 
 if __name__ == "__main__":
     main()
