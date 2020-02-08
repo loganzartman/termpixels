@@ -59,8 +59,9 @@ if __name__ == "__main__":
 ```
 
 ### More demos
-* [DoomTerm](https://github.com/loganzartman/doomterm)
-* [tpmatrix](https://github.com/loganzartman/tpmatrix)
+* [TermWorm](https://github.com/loganzartman/termworm) - a clone of the Snake game
+* [DoomTerm](https://github.com/loganzartman/doomterm) - a Doom-esque fire animation
+* [tpmatrix](https://github.com/loganzartman/tpmatrix) - a Matrix-esque falling text rain animation
 
 ## Features
 * **Unix** (and **Mac**) terminal feature detection with terminfo (via Python [curses][python-curses])
