@@ -19,7 +19,7 @@ class KeyParser:
 
 class SgrMouseParser: 
     # https://invisible-island.net/xterm/ctlseqs/ctlseqs.html#h3-Extended-coordinates   
-    def __init__(self, mouse_prefix):
+    def __init__(self):
         self.regex = re.compile(r"\x1b\[(?:\<|M)(\d+);(\d+);(\d+)(m|M)")
     
     def parse(self, group):
@@ -192,5 +192,5 @@ def make_parsers(ti):
     return (
         make_key_parser(ti),
         X10MouseParser(),
-        SgrMouseParser(ti.string("kmous").decode("ascii"))
+        SgrMouseParser()
     )
