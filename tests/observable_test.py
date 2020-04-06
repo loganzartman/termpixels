@@ -174,3 +174,35 @@ def test_observable_event_await_dispatched():
     poll_events()
     t.join(timeout=0.5)
     assert done
+
+def test_observable_listener_priority():
+    o = Observable()
+    
+    handled_1 = False
+    handled_2 = False
+    handled_3 = False
+
+    @o.on("A", priority=3)
+    def A1():
+        nonlocal handled_1
+        assert not handled_2
+        assert not handled_3
+        handled_1 = True
+
+    @o.on("A", priority=2)
+    def A2():
+        nonlocal handled_2
+        assert handled_1
+        assert not handled_3
+        handled_2 = True
+
+    @o.on("A", priority=1)
+    def A3():
+        nonlocal handled_3
+        assert handled_1
+        assert handled_2
+        handled_3 = True
+    
+    o.emit("A")
+    poll_events()
+    assert handled_1 and handled_2 and handled_3

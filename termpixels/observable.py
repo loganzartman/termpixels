@@ -55,20 +55,24 @@ class Observable:
     def __init__(self, queue=main_event_queue):
         self._listeners = defaultdict(list)
         self._event_queue = queue
+        self._listener_priority = defaultdict(dict)
     
-    def listen(self, event_name, listener):
+    def listen(self, event_name, listener, *, priority=0):
         """Register a new event listener for a particular event name."""
+        self._listener_priority[event_name][listener] = priority
         self._listeners[event_name].append(listener)
+        self._listeners[event_name].sort(reverse=True, key=lambda listener: self._listener_priority[event_name][listener])
     
     def unlisten(self, event_name, listener):
         """Remove a particular event listener for a particular event name."""
+        del self._listener_priority[event_name][listener]
         self._listeners[event_name].remove(listener)
     
     def emit(self, event_name, *args, **kwargs):
         """Enqueue an event to trigger all relevant listeners with arbitrary data."""
         self._event_queue.put(Event(source=self, name=event_name, args=args, kwargs=kwargs))
     
-    def on(self, event_name):
+    def on(self, event_name, *, priority=0):
         """listen() as a decorator.
         
         The wrapper function includes a .off() method which unlistens it.
@@ -77,7 +81,7 @@ class Observable:
             def wrapper(*args, **kwargs):
                 fn(*args, **kwargs)
             wrapper.off = lambda: self.unlisten(event_name, wrapper)
-            self.listen(event_name, wrapper)
+            self.listen(event_name, wrapper, priority=priority)
             return wrapper
         return decorator
 
