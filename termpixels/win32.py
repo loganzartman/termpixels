@@ -298,6 +298,17 @@ class Win32Backend(Observable):
         if old_buffer:
             windll.kernel32.CloseHandle(old_buffer)
     
+    def beep(self):
+        n_written = DWORD()
+        bel = "\007"
+        windll.kernel32.WriteConsoleOutputW(
+            self._stdout,
+            bel,
+            len(bel),
+            byref(n_written),
+            None
+        )
+    
     def enter_alt_buffer(self):
         windll.kernel32.SetConsoleActiveScreenBuffer(self._back_buffer)
         self._out_buffer = self._back_buffer

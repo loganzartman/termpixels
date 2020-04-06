@@ -180,6 +180,10 @@ class UnixBackend(Observable):
         else:
             self.write_escape("\x1b%@")
     
+    def beep(self):
+        self.write_escape(self._ti.string("bel"))
+        self.flush()
+
     def enter_alt_buffer(self):
         self.write_escape(self._ti.parameterize("smcup"))
     
