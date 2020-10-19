@@ -41,6 +41,9 @@ class Buffer:
     
     def in_bounds(self, x, y):
         return x >= 0 and y >= 0 and x < self.w and y < self.h
+    
+    def at_unsafe(self, x, y):
+        return self._pixels[x][y]
 
     def at(self, x, y, *, clip=False):
         """Get the PixelData instance for a particular location.
@@ -59,7 +62,7 @@ class Buffer:
             raise Exception("x position {} out of bounds".format(x))
         if y >= self.h or y < 0:
             raise Exception("y position {} out of bounds".format(y))
-        return self._pixels[x][y]
+        return self.at_unsafe(x, y)
     
     def __getitem__(self, xy):
         x, y = xy
@@ -82,7 +85,7 @@ class Buffer:
             for j in range(y, y + h):
                 if i < 0 or j < 0  or i >= self.w or j >= self.h:
                     continue
-                pixel = self._pixels[i][j]
+                pixel = self.at_unsafe(i, j)
                 if fg is not None:
                     pixel.fg = fg
                 if bg is not None:
@@ -99,7 +102,7 @@ class Buffer:
         blank = PixelData(fg=fg, bg=bg, char=char)
         for i in range(0, self.w):
             for j in range(0, self.h):
-                self._pixels[i][j].set(blank)
+                self.at_unsafe(i, j).set(blank)
     
     def blit(self, buffer, x=0, y=0, x0=0, y0=0, x1=None, y1=None):
         """ copy a buffer to this buffer 
@@ -132,7 +135,7 @@ class Buffer:
                 src_y = y0 + dy
                 if not self.in_bounds(dst_x, dst_y) or not buffer.in_bounds(src_x, src_y):
                     continue
-                self._pixels[dst_x][dst_y].set(buffer._pixels[src_x][src_y])
+                self.at_unsafe(dst_x, dst_y).set(buffer.at_unsafe(src_x, src_y))
     
     def put_char(self, ch, x, y, *, fg=None, bg=None):
         """Put a single character and/or colors at a particular location.
@@ -152,7 +155,7 @@ class Buffer:
         """
         ch_len = terminal_char_len(ch)
         if x >= 0 and y >= 0 and x + ch_len <= self.w and y < self.h:
-            pixel = self._pixels[x][y]
+            pixel = self.at_unsafe(x, y)
             pixel.char = ch
             if fg:
                 pixel.fg = fg
@@ -164,7 +167,7 @@ class Buffer:
             # the fullwidth character is later removed.
             if ch_len > 1:
                 assert ch_len == 2
-                shadowed = self._pixels[x+1][y]
+                shadowed = self.at_unsafe(x+1, y)
                 shadowed.char = " "
                 if fg:
                     shadowed.fg = fg
