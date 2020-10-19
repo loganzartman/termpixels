@@ -34,28 +34,25 @@ from termpixels import App, Color
 from time import time
 from math import sin
 
-def main():
-    app = App()
+a = App()
 
-    @app.on("frame")                                 # run this function every frame
-    def on_frame():
-        app.screen.clear()                           # remove everything from the screen
-        text = "Hello world, from termpixels!"
-        
-        for i, c in enumerate(text):
-            f = i / len(text)
-            color = Color.hsl(f + time(), 1, 0.5)    # create a color from a hue value
-            x = app.screen.w // 2 - len(text) // 2   # horizontally center the text
-            offset = sin(time() * 3 + f * 5) * 2     # some arbitrary math
-            y = round(app.screen.h / 2 + offset)     # vertical center with an offset
-            app.screen.print(c, x + i, y, fg=color)  # draw the text to the screen buffer
-        
-        app.screen.update()                          # commit the changes to the screen
-    
-    app.run()                                        # block here until the app exits (press Escape!)
+@a.on("frame")                                 # run this function every frame
+def frame():
+    a.screen.clear()                           # remove everything from the screen
+    text = "Hello world, from termpixels!"
+
+    for i, c in enumerate(text):
+        f = i / len(text)
+        color = Color.hsl(f + time(), 1, 0.5)  # create a color from a hue value
+        x = a.screen.w // 2 - len(text) // 2   # horizontally center the text
+        offset = sin(time() * 3 + f * 5) * 2   # some arbitrary math
+        y = round(a.screen.h / 2 + offset)     # vertical center with an offset
+        a.screen.print(c, x + i, y, fg=color)  # draw the text to the screen buffer
+
+    a.screen.update()                          # commit the changes to the screen
 
 if __name__ == "__main__":
-    main()
+    a.run()                                    # block here until the app exits (press Escape!)
 ```
 
 ### More demos
@@ -89,4 +86,4 @@ if __name__ == "__main__":
 [ncurses]: https://www.gnu.org/software/ncurses/
 [pypi]: https://pypi.org/project/termpixels/
 [byocl]: http://www.lihaoyi.com/post/BuildyourownCommandLinewithANSIescapecodes.html
-[text coloring]: https://github.com/loganzartman/termpixels/blob/master/termpixels/examples/simple_text_coloring.py
+[text coloring]: https://github.com/loganzartman/termpixels/blob/master/examples/simple_text_coloring.py
