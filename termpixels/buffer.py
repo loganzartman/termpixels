@@ -107,22 +107,24 @@ class Buffer:
     def blit(self, buffer, x=0, y=0, x0=0, y0=0, x1=None, y1=None):
         """ copy a buffer to this buffer 
 
-        Copy a sub-region by specifying two corners (x0, y0) and (x1, y1) where
-        all coordinates are inclusive.
-
-        Also supports blitting anything that implements a blit_to() method with
-        the same signature, but with the "buffer" argument being the 
-        destination rather than the source buffer.
+        Has the same signature of blit_to(), but with the buffer argument being
+        the source rather than the destination. This method will blit anything 
+        that has a blit_to() method.
         """
-        if not isinstance(buffer, Buffer):
-            if hasattr(buffer, "blit_to") and callable(buffer.blit_to):
-                return buffer.blit_to(self, x=x, y=y, x0=x0, y0=y0, x1=x1, y1=y1)
-            raise ValueError("buffer must be a Buffer instance or have a blit_to() method.")
+        if hasattr(buffer, "blit_to") and callable(buffer.blit_to):
+            return buffer.blit_to(self, x=x, y=y, x0=x0, y0=y0, x1=x1, y1=y1)
+        raise ValueError("buffer must have a blit_to() method.")
 
+    def blit_to(self, buffer, x=0, y=0, x0=0, y0=0, x1=None, y1=None):
+        """ copy this buffer to another buffer
+
+        Copy a sub-region of this buffer by specifying two corners (x0, y0) 
+        and (x1, y1) where all coordinates are inclusive.
+        """
         if x1 == None:
-            x1 = buffer.w
+            x1 = self.w
         if y1 == None:
-            y1 = buffer.h
+            y1 = self.h
         
         x0, x1 = (min(x0, x1), max(x0, x1))
         y0, y1 = (min(y0, y1), max(y0, y1))
@@ -133,9 +135,9 @@ class Buffer:
                 dst_y = y + dy
                 src_x = x0 + dx
                 src_y = y0 + dy
-                if not self.in_bounds(dst_x, dst_y) or not buffer.in_bounds(src_x, src_y):
+                if not self.in_bounds(src_x, src_y) or not buffer.in_bounds(dst_x, dst_y):
                     continue
-                self.at_unsafe(dst_x, dst_y).set(buffer.at_unsafe(src_x, src_y))
+                buffer.at_unsafe(dst_x, dst_y).set(self.at_unsafe(src_x, src_y))
     
     def put_char(self, ch, x, y, *, fg=None, bg=None):
         """Put a single character and/or colors at a particular location.

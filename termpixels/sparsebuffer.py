@@ -27,6 +27,7 @@ class SparseBuffer(Buffer):
     def at_unsafe(self, x, y):
         if y not in self._data[x]:
             self._data[x][y] = PixelData().set(self._clear_pixel)
+            self._pixel_count += 1
         return self._data[x][y]
     
     def at(self, *args, clip=False, **kwargs):
@@ -51,3 +52,29 @@ class SparseBuffer(Buffer):
         """
         self._clear_pixel = PixelData(fg=fg, bg=bg, char=char)
         self._data = defaultdict(lambda: {})
+        self._pixel_count = 0
+
+    def blit_to(self, buffer, x=0, y=0, x0=0, y0=0, x1=None, y1=None):
+        """ copy this buffer to another buffer
+
+        Copy a sub-region of this buffer by specifying two corners (x0, y0) 
+        and (x1, y1) where all coordinates are inclusive.
+        """
+        # assume 2x performance penalty for random writes, and if the simpler
+        # implementation of blit() beats this, then use it.
+        if buffer.w * buffer.h <= self._pixel_count * 2:
+            return Buffer.blit_to(self, buffer, x=x, y=y, x0=x0, y0=y0, x1=x1, y1=y1)
+
+        if x1 == None:
+            x1 = self.w
+        if y1 == None:
+            y1 = self.h
+        for src_x, y_dict in self._data.items():
+            for src_y, pixel in y_dict.items():
+                if not (x0 <= src_x <= x1 and y0 <= src_y <= y1):
+                    continue
+                dst_x = x + src_x - x0
+                dst_y = y + src_y - y0
+                if not buffer.in_bounds(dst_x, dst_y):
+                    continue
+                buffer.at_unsafe(dst_x, dst_y).set(pixel)
