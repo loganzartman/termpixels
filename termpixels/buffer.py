@@ -127,8 +127,8 @@ class Buffer:
         x0, x1 = (min(x0, x1), max(x0, x1))
         y0, y1 = (min(y0, y1), max(y0, y1))
         
-        for dx in range(min(x1-x0+1, self.w)):
-            for dy in range(min(y1-y0+1, self.h)):
+        for dx in range(x1-x0+1):
+            for dy in range(y1-y0+1):
                 dst_x = x + dx
                 dst_y = y + dy
                 src_x = x0 + dx
