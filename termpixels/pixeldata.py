@@ -53,6 +53,7 @@ class PixelData:
         self._bg = pixel._bg
         self._char = pixel._char
         self._hash = None
+        return self
 
     def __str__(self):
         return repr(self)
