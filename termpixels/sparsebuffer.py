@@ -2,7 +2,7 @@ from collections import defaultdict
 
 from termpixels.buffer import Buffer
 from termpixels.color import Color
-from termpixels.pixeldata import PixelData
+from termpixels.pixeldata import PixelData, ImmutablePixelData
 
 class SparseBuffer(Buffer):
     """An implementation of Buffer that stores pixels in a sparse data structure.
@@ -49,6 +49,8 @@ class SparseBuffer(Buffer):
         If mutable=False, this method is allowed to return an ImmutablePixelData.
         """
         if y not in self._data[x]:
+            if not mutable:
+                return self._clear_pixel
             self._data[x][y] = PixelData().set(self._clear_pixel)
             self._pixel_count += 1
         return self._data[x][y]
@@ -73,6 +75,6 @@ class SparseBuffer(Buffer):
         Unlike fill(), all attributes must be specified. If not specified, they
         will be given default values instead.
         """
-        self._clear_pixel = PixelData(fg=fg, bg=bg, char=char)
+        self._clear_pixel = ImmutablePixelData(fg=fg, bg=bg, char=char)
         self._data = defaultdict(lambda: {})
         self._pixel_count = 0

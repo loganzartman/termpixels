@@ -42,7 +42,13 @@ class Buffer:
     def in_bounds(self, x, y):
         return x >= 0 and y >= 0 and x < self.w and y < self.h
     
-    def at_unsafe(self, x, y):
+    def at_unsafe(self, x, y, *, mutable=True):
+        """Get the PixelData instance for a particular location.
+
+        Should be used by internal methods for pixel data access.
+        No bounds checking is performed.
+        If mutable=False, this method is allowed to return an ImmutablePixelData.
+        """
         return self._pixels[x][y]
 
     def at(self, x, y, *, clip=False):
@@ -137,7 +143,7 @@ class Buffer:
                 src_y = y0 + dy
                 if not self.in_bounds(src_x, src_y) or not buffer.in_bounds(dst_x, dst_y):
                     continue
-                buffer.at_unsafe(dst_x, dst_y).set(self.at_unsafe(src_x, src_y))
+                buffer.at_unsafe(dst_x, dst_y).set(self.at_unsafe(src_x, src_y, mutable=False))
     
     def put_char(self, ch, x, y, *, fg=None, bg=None):
         """Put a single character and/or colors at a particular location.
