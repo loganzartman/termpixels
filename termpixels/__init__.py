@@ -4,7 +4,7 @@ from termpixels.keys import Key, Mouse
 from termpixels.screen import Screen
 from termpixels.buffer import Buffer
 from termpixels.sparsebuffer import SparseBuffer
-from termpixels.pixeldata import PixelData
+from termpixels.pixeldata import PixelData, ImmutablePixelData
 
 name = "termpixels"
 __version__ = "1.0.0b1"
