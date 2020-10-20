@@ -5,6 +5,18 @@ from termpixels.color import Color
 from termpixels.pixeldata import PixelData
 
 class SparseBuffer(Buffer):
+    """An implementation of Buffer that stores pixels in a sparse data structure.
+
+    SparseBuffer stores only pixels which have been accessed since last 
+    clearing the buffer. You might want to use it if you need to resize the
+    buffer frequently, or if you need a large buffer that will have more
+    blank space than content.
+
+    Performance characteristics as compared to Buffer:
+    - Resizing and clearing are faster (O(1) vs O(m*n)).
+    - Blitting to another buffer can be faster, if few pixels have been accessed.
+    - Accessing a pixel can be slower (still O(1) amortized).
+    """
     def __init__(self, *params, **kwargs):
         super().__init__(*params, **kwargs)
         self._data = defaultdict(lambda: {})
